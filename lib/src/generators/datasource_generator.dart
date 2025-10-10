@@ -17,7 +17,7 @@ Future<void> generateDatasources(
   final jsonStr = await file.readAsString();
   final map = json.decode(jsonStr) as Map<String, dynamic>;
 
-  final baseDir = Directory('$outputDir/datasources');
+  final baseDir = Directory('$outputDir/lib/features/data/datasources');
   if (!baseDir.existsSync()) baseDir.createSync(recursive: true);
 
   for (final categoryEntry in map.entries) {

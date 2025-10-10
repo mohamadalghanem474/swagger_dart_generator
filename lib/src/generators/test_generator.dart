@@ -17,7 +17,7 @@ Future<void> generateIntegrationTests(
   final jsonStr = await file.readAsString();
   final map = json.decode(jsonStr) as Map<String, dynamic>;
 
-  final baseDir = Directory('$outputDir/integration');
+  final baseDir = Directory('$outputDir/test/integration');
   baseDir.createSync(recursive: true);
 
   for (final categoryEntry in map.entries) {

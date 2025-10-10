@@ -46,7 +46,7 @@ Future<void> generateEndpoints(
   });
 
   // Write output to a Dart file
-  final outFile = File('$outputDir/end_points.dart');
+  final outFile = File('$outputDir/lib/core/constants/end_points.dart');
   await outFile.writeAsString(buffer.toString());
 
   print("✅ endpoint.dart generated successfully!");

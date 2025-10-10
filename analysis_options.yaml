@@ -1,0 +1,6 @@
+formatter:
+  page_width: 300
+  trailing_commas: preserve
+linter:
+  rules:
+    - always_use_package_imports

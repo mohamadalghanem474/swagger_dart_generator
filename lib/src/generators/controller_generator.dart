@@ -17,7 +17,7 @@ Future<void> generateControllers(
   final jsonStr = await file.readAsString();
   final map = json.decode(jsonStr) as Map<String, dynamic>;
 
-  final baseDir = Directory('$outputDir/controllers');
+  final baseDir = Directory('$outputDir/lib/features/presentation/controllers');
   baseDir.createSync(recursive: true);
 
   for (final categoryEntry in map.entries) {

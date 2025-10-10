@@ -17,7 +17,7 @@ Future<void> generateRepositories(
   final jsonStr = await file.readAsString();
   final map = json.decode(jsonStr) as Map<String, dynamic>;
 
-  final baseDir = Directory('$outputDir/repositories');
+  final baseDir = Directory('$outputDir/lib/features/data/repositories');
   baseDir.createSync(recursive: true);
 
   for (final categoryEntry in map.entries) {

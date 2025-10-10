@@ -17,7 +17,7 @@ Future<void> generateModels(
   final jsonStr = await file.readAsString();
   final endpointsMap = json.decode(jsonStr) as Map<String, dynamic>;
 
-  final baseDir = Directory('$outputDir/models');
+  final baseDir = Directory('$outputDir/lib/features/data/models');
   if (!baseDir.existsSync()) {
     baseDir.createSync(recursive: true);
   }
