@@ -52,18 +52,19 @@ Future<void> generateControllers(
     }
 
     buffer.writeln("import 'package:injectable/injectable.dart';");
-    buffer.writeln("import 'package:mg_sub/mg_sub.dart';\n");
+    buffer.writeln("import 'package:sub_state/sub_state.dart';");
+    buffer.writeln("import 'package:use/use.dart';\n");
 
-    // Generate Sub classes for each endpoint
+    // Generate Use classes for each endpoint
     for (final endpointName in endpoints.keys) {
-      final controllerName = '${Utils.toPascalCase(endpointName)}Sub';
+      final controllerName = 'Use${Utils.toPascalCase(endpointName)}';
       final reqClass = '${Utils.toPascalCase(endpointName)}Req';
       final resClass = '${Utils.toPascalCase(endpointName)}Res';
       final methodName = Utils.toLowerCamelCase(endpointName);
 
       buffer.writeln('@injectable');
       buffer.writeln(
-        'class $controllerName extends Sub<SubState<$resClass>> {',
+        'class $controllerName extends Use<SubState<$resClass>> {',
       );
       buffer.writeln(
         '  final ${category}Repository _${Utils.toLowerCamelCase(category)}Repository;',
