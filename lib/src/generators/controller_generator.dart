@@ -71,7 +71,7 @@ Future<void> generateControllers(
       );
       buffer.writeln('  CancelToken? _cancelToken;\n');
       buffer.writeln(
-        '  $controllerName(@factoryParam String id, this._${Utils.toLowerCamelCase(category)}Repository) : super(SubState.initial(), id);\n',
+        '  $controllerName(@factoryParam String? id, this._${Utils.toLowerCamelCase(category)}Repository) : super(SubState.initial(), id: id);\n',
       );
       buffer.writeln(
         '  Future<void> call({$reqClass? req, bool cancel = false}) async {',
