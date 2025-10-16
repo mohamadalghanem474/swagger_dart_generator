@@ -1,6 +1,6 @@
 name: swagger_dart_generator
 description: A Dart code generator that creates complete Flutter project structure from Swagger/OpenAPI JSON files
-version: 1.0.5
+version: 1.0.6
 repository: https://github.com/yourusername/swagger_dart_generator
 
 environment:
