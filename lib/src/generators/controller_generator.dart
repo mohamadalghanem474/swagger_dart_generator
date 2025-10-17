@@ -70,23 +70,16 @@ Future<void> generateControllers(String path, String package, String outputDir, 
       final repositoryName = Utils.toLowerCamelCase(category);
 
       buffer.writeln('@injectable');
-      buffer.writeln(
-        'class $controllerName extends Use<SubState<$resClass>> {',
-      );
+      buffer.writeln('class $controllerName extends Use<SubState<$resClass>> {');
       buffer.writeln('  final Api _api;');
       buffer.writeln('  CancelToken? _cancelToken;\n');
-      buffer.writeln(
-        '  $controllerName(@factoryParam String? id, this._api) : super(SubState.initial(), id: id);\n',
-      );
-      buffer.writeln(
-        '  Future<void> call({$reqClass? req, bool cancel = false}) async {',
-      );
+      buffer.writeln('  $controllerName(@factoryParam String? id, this._api) : super(SubState.initial(), id: id);');
+      buffer.writeln('  Future<void> call({$reqClass? req, bool cancel = false}) async {');
       buffer.writeln('    if (cancel) {');
       buffer.writeln('      _cancelToken?.cancel();');
       buffer.writeln('    } else {');
       buffer.writeln('      if (state.isLoading) return;');
       buffer.writeln('    }');
-      buffer.writeln('');
       buffer.writeln('    _cancelToken = CancelToken();');
       buffer.writeln('    emit(SubState.loading());');
       buffer.writeln(
