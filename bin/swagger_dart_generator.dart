@@ -13,6 +13,6 @@ void main(List<String> args) async {
     exit(1);
   }
   final package = args[0];
-
-  await generateFromSwagger(package);
+  final replace = args.length > 1 && args[1] == '--replace';
+  await generateFromSwagger(package, replace);
 }

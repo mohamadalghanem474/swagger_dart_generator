@@ -6,8 +6,7 @@ import 'dart:io';
 
 import 'package:swagger_dart_generator/src/utils/utils.dart';
 
-Future<void> generateRepositories(
-    String path, String package, String outputDir) async {
+Future<void> generateRepositories(String path, String package, String outputDir, bool replace) async {
   final file = File(path);
   if (!file.existsSync()) {
     print('❌ $path not found!');
@@ -17,7 +16,7 @@ Future<void> generateRepositories(
   final jsonStr = await file.readAsString();
   final map = json.decode(jsonStr) as Map<String, dynamic>;
 
-  final baseDir = Directory('$outputDir/lib/features/data/repositories');
+  final baseDir = Directory('$outputDir/lib/data/repositories');
   baseDir.createSync(recursive: true);
 
   for (final categoryEntry in map.entries) {
@@ -28,25 +27,30 @@ Future<void> generateRepositories(
     categoryDir.createSync(recursive: true);
 
     final abstractFile = File('${categoryDir.path}/$categoryName.dart');
+    if (abstractFile.existsSync() && !replace) {
+      print('⏭️  Skipped: ${abstractFile.path} already exists');
+      continue;
+    }
     final implFile = File(
       '${categoryDir.path}/${categoryName}_repository_impl.dart',
     );
-
+    if (implFile.existsSync() && !replace) {
+      print('⏭️  Skipped: ${implFile.path} already exists');
+      continue;
+    }
     final abstractBuffer = StringBuffer();
     final implBuffer = StringBuffer();
 
     // ---------- ABSTRACT REPOSITORY ----------
     abstractBuffer.writeln("import 'package:dartz/dartz.dart';");
     abstractBuffer.writeln("import 'package:dio/dio.dart';");
-    abstractBuffer.writeln(
-      "import 'package:$package/core/errors/failures.dart';",
-    );
+    abstractBuffer.writeln("import 'package:$package/failure.dart';");
 
     // Import individual request models
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       abstractBuffer.writeln(
-        "import 'package:$package/features/data/models/$categoryName/requests/${snakeName}_req.dart';",
+        "import 'package:$package/data/models/$categoryName/requests/${snakeName}_req.dart';",
       );
     }
 
@@ -54,7 +58,7 @@ Future<void> generateRepositories(
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       abstractBuffer.writeln(
-        "import 'package:$package/features/data/models/$categoryName/responses/${snakeName}_res.dart';",
+        "import 'package:$package/data/models/$categoryName/responses/${snakeName}_res.dart';",
       );
     }
 
@@ -75,21 +79,21 @@ Future<void> generateRepositories(
     print('✅ Created: ${abstractFile.path}');
 
     // ---------- IMPLEMENTATION ----------
+    implBuffer.writeln("import 'package:$package/failure.dart';");
     implBuffer.writeln("import 'package:dartz/dartz.dart';");
     implBuffer.writeln("import 'package:dio/dio.dart';");
-    implBuffer.writeln("import 'package:$package/core/errors/failures.dart';");
     implBuffer.writeln(
-      "import 'package:$package/features/data/repositories/$categoryName/$categoryName.dart';",
+      "import 'package:$package/data/repositories/$categoryName/$categoryName.dart';",
     );
     implBuffer.writeln(
-      "import 'package:$package/features/data/datasources/$categoryName/${categoryName}_remote_datasource.dart';",
+      "import 'package:$package/data/datasources/$categoryName/${categoryName}.dart';",
     );
 
     // Import individual request models
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       implBuffer.writeln(
-        "import 'package:$package/features/data/models/$categoryName/requests/${snakeName}_req.dart';",
+        "import 'package:$package/data/models/$categoryName/requests/${snakeName}_req.dart';",
       );
     }
 
@@ -97,17 +101,14 @@ Future<void> generateRepositories(
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       implBuffer.writeln(
-        "import 'package:$package/features/data/models/$categoryName/responses/${snakeName}_res.dart';",
+        "import 'package:$package/data/models/$categoryName/responses/${snakeName}_res.dart';",
       );
     }
-
-    implBuffer.writeln("import 'package:injectable/injectable.dart';\n");
-
-    implBuffer.writeln(
-      '@LazySingleton(as: ${category}Repository, env: [Environment.test, Environment.dev, Environment.prod])\nclass ${category}RepositoryImpl implements ${category}Repository {',
-    );
-    implBuffer.writeln('  final ${category}RemoteDataSource _dataSource;\n');
-    implBuffer.writeln('  ${category}RepositoryImpl(this._dataSource);\n');
+    implBuffer.writeln("");
+    implBuffer.writeln('class ${category}RepositoryImpl implements ${category}Repository {');
+    implBuffer.writeln('  final Failure failure;');
+    implBuffer.writeln('  final ${category}DataSource _dataSource;\n');
+    implBuffer.writeln('  ${category}RepositoryImpl(this._dataSource, this.failure);\n');
 
     for (final endpointName in endpoints.keys) {
       final req = '${Utils.toPascalCase(endpointName)}Req';
@@ -124,7 +125,7 @@ Future<void> generateRepositories(
       );
       implBuffer.writeln('      return Right(result);');
       implBuffer.writeln('    } catch (e, stackTrace) {');
-      implBuffer.writeln('      return Left(Failure.handle(e, stackTrace));');
+      implBuffer.writeln('      return Left(failure.handle(e, stackTrace));');
       implBuffer.writeln('    }');
       implBuffer.writeln('  }\n');
     }

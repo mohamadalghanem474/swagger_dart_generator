@@ -6,8 +6,7 @@ import 'dart:io';
 
 import 'package:swagger_dart_generator/src/utils/utils.dart';
 
-Future<void> generateIntegrationTests(
-    String path, String package, String outputDir) async {
+Future<void> generateIntegrationTests(String path, String package, String outputDir, bool replace) async {
   final file = File(path);
   if (!file.existsSync()) {
     print('❌ $path not found!');
@@ -17,7 +16,7 @@ Future<void> generateIntegrationTests(
   final jsonStr = await file.readAsString();
   final map = json.decode(jsonStr) as Map<String, dynamic>;
 
-  final baseDir = Directory('$outputDir/test/integration');
+  final baseDir = Directory('$outputDir/test');
   baseDir.createSync(recursive: true);
 
   for (final categoryEntry in map.entries) {
@@ -26,6 +25,10 @@ Future<void> generateIntegrationTests(
     final categoryName = Utils.toSnakeCase(category);
 
     final testFile = File('${baseDir.path}/${categoryName}_test.dart');
+    if (testFile.existsSync() && !replace) {
+      print('⏭️  Skipped: ${testFile.path} already exists');
+      return;
+    }
     final buffer = StringBuffer();
 
     buffer.writeln("// ignore_for_file: unused_import");
@@ -33,7 +36,7 @@ Future<void> generateIntegrationTests(
     buffer.writeln("import 'package:injectable/injectable.dart' hide test;");
     buffer.writeln("import 'package:dartz/dartz.dart';");
     buffer.writeln(
-      "import 'package:$package/features/data/repositories/$categoryName/${categoryName}.dart';",
+      "import 'package:$package/data/repositories/$categoryName/${categoryName}.dart';",
     );
     buffer.writeln("import 'package:$package/core/injectable/get_it.dart';");
 
@@ -41,7 +44,7 @@ Future<void> generateIntegrationTests(
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       buffer.writeln(
-        "import 'package:$package/features/data/models/$categoryName/requests/${snakeName}_req.dart';",
+        "import 'package:$package/data/models/$categoryName/requests/${snakeName}_req.dart';",
       );
     }
 
@@ -49,7 +52,7 @@ Future<void> generateIntegrationTests(
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       buffer.writeln(
-        "import 'package:$package/features/data/models/$categoryName/responses/${snakeName}_res.dart';",
+        "import 'package:$package/data/models/$categoryName/responses/${snakeName}_res.dart';",
       );
     }
 

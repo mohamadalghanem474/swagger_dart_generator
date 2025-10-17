@@ -6,8 +6,7 @@ import 'dart:io';
 
 import 'package:swagger_dart_generator/src/utils/utils.dart';
 
-Future<void> generateControllers(
-    String path, String package, String outputDir) async {
+Future<void> generateControllers(String path, String package, String outputDir, bool replace) async {
   final file = File(path);
   if (!file.existsSync()) {
     print('❌ $path not found!');
@@ -17,37 +16,44 @@ Future<void> generateControllers(
   final jsonStr = await file.readAsString();
   final map = json.decode(jsonStr) as Map<String, dynamic>;
 
-  final baseDir = Directory('$outputDir/lib/features/presentation/controllers');
+  final baseDir = Directory('$outputDir/controllers');
   baseDir.createSync(recursive: true);
 
   for (final categoryEntry in map.entries) {
     final category = categoryEntry.key;
     final endpoints = categoryEntry.value as Map<String, dynamic>;
     final categoryName = Utils.toSnakeCase(category);
-    // final categoryDir = Directory('${baseDir.path}/$categoryName');
-    // categoryDir.createSync(recursive: true);
 
     final filePath = File(
       '${baseDir.path}/${categoryName}_controllers.dart',
     );
+
+    // Check if file exists and replace flag
+    if (filePath.existsSync() && !replace) {
+      print('⏭️  Skipped: ${filePath.path} already exists');
+      continue;
+    }
+
     final buffer = StringBuffer();
 
-    // Imports
+    // Imports - matching your exact structure
     buffer.writeln("import 'dart:async';");
+    buffer.writeln("import 'package:$package/api.dart';");
     buffer.writeln("import 'package:dio/dio.dart';");
-    buffer.writeln("");
-    buffer.writeln(
-      "import 'package:$package/features/data/repositories/$categoryName/${categoryName}.dart';",
-    );
 
-    // Import individual request/response models
+    // Import response models only (matching your example)
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       buffer.writeln(
-        "import 'package:$package/features/data/models/$categoryName/requests/${snakeName}_req.dart';",
+        "import 'package:$package/data/models/$categoryName/responses/${snakeName}_res.dart';",
       );
+    }
+
+    // Import request models only (matching your example)
+    for (final endpointName in endpoints.keys) {
+      final snakeName = Utils.toSnakeCase(endpointName);
       buffer.writeln(
-        "import 'package:$package/features/data/models/$categoryName/responses/${snakeName}_res.dart';",
+        "import 'package:$package/data/models/$categoryName/requests/${snakeName}_req.dart';",
       );
     }
 
@@ -55,23 +61,22 @@ Future<void> generateControllers(
     buffer.writeln("import 'package:sub_state/sub_state.dart';");
     buffer.writeln("import 'package:use/use.dart';\n");
 
-    // Generate Use classes for each endpoint
+    // Generate Use classes for each endpoint - EXACTLY matching your structure
     for (final endpointName in endpoints.keys) {
       final controllerName = 'Use${Utils.toPascalCase(endpointName)}';
       final reqClass = '${Utils.toPascalCase(endpointName)}Req';
       final resClass = '${Utils.toPascalCase(endpointName)}Res';
       final methodName = Utils.toLowerCamelCase(endpointName);
+      final repositoryName = Utils.toLowerCamelCase(category);
 
       buffer.writeln('@injectable');
       buffer.writeln(
         'class $controllerName extends Use<SubState<$resClass>> {',
       );
-      buffer.writeln(
-        '  final ${category}Repository _${Utils.toLowerCamelCase(category)}Repository;',
-      );
+      buffer.writeln('  final Api _api;');
       buffer.writeln('  CancelToken? _cancelToken;\n');
       buffer.writeln(
-        '  $controllerName(@factoryParam String? id, this._${Utils.toLowerCamelCase(category)}Repository) : super(SubState.initial(), id: id);\n',
+        '  $controllerName(@factoryParam String? id, this._api) : super(SubState.initial(), id: id);\n',
       );
       buffer.writeln(
         '  Future<void> call({$reqClass? req, bool cancel = false}) async {',
@@ -81,17 +86,17 @@ Future<void> generateControllers(
       buffer.writeln('    } else {');
       buffer.writeln('      if (state.isLoading) return;');
       buffer.writeln('    }');
-      buffer.writeln('    ');
+      buffer.writeln('');
       buffer.writeln('    _cancelToken = CancelToken();');
       buffer.writeln('    emit(SubState.loading());');
       buffer.writeln(
-        '    final result = await _${Utils.toLowerCamelCase(category)}Repository.$methodName(req?? $reqClass(), cancelToken: _cancelToken);',
+        '    final result = await _api.repository.$repositoryName.$methodName(req ?? $reqClass(), cancelToken: _cancelToken);',
       );
       buffer.writeln(
         '    result.fold((l) => emit(SubState.failure(l.message)), (data) => emit(SubState.success(data)));',
       );
       buffer.writeln('  }');
-      buffer.writeln('  ');
+      buffer.writeln('');
       buffer.writeln('  @override');
       buffer.writeln('  void dispose() {');
       buffer.writeln('    _cancelToken?.cancel();');

@@ -6,8 +6,7 @@ import 'dart:io';
 
 import 'package:swagger_dart_generator/src/utils/utils.dart';
 
-Future<void> generateModels(
-    String path, String package, String outputDir) async {
+Future<void> generateModels(String path, String package, String outputDir, bool replace) async {
   final file = File(path);
   if (!file.existsSync()) {
     print('❌ $path not found!');
@@ -17,7 +16,7 @@ Future<void> generateModels(
   final jsonStr = await file.readAsString();
   final endpointsMap = json.decode(jsonStr) as Map<String, dynamic>;
 
-  final baseDir = Directory('$outputDir/lib/features/data/models');
+  final baseDir = Directory('$outputDir/lib//data/models');
   if (!baseDir.existsSync()) {
     baseDir.createSync(recursive: true);
   }
@@ -41,7 +40,10 @@ Future<void> generateModels(
 
       // Generate Request JSON file
       final reqFile = File('${requestsDir.path}/${snakeName}_req.dto.json');
-
+      if (reqFile.existsSync() && !replace) {
+        print('⏭️  Skipped: ${reqFile.path} already exists');
+        continue;
+      }
       // Build request JSON structure - only include non-empty objects
       final requestJson = <String, dynamic>{};
 
@@ -74,7 +76,10 @@ Future<void> generateModels(
 
       // Generate Response JSON file
       final resFile = File('${responsesDir.path}/${snakeName}_res.dto.json');
-
+      if (resFile.existsSync() && !replace) {
+        print('⏭️  Skipped: ${resFile.path} already exists');
+        continue;
+      }
       // Build response JSON structure - handle all data types
       final responseData = endpointData['response'];
       dynamic responseJson;

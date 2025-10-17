@@ -7,7 +7,7 @@ import 'dart:io';
 typedef Json = Map<String, dynamic>;
 typedef JsonList = List<dynamic>;
 
-Future<String> parseSwaggerFile(String path, String outputDir) async {
+Future<String> parseSwaggerFile(String path, String outputDir, bool replace) async {
   final file = File(path);
   if (!file.existsSync()) {
     print('❌ $path not found!');
@@ -34,26 +34,20 @@ Future<String> parseSwaggerFile(String path, String outputDir) async {
 
   paths.forEach((path, methods) {
     (methods as Json).forEach((method, details) {
-      if (method == 'parameters' || !httpMethods.contains(method.toLowerCase()))
-        return;
+      if (method == 'parameters' || !httpMethods.contains(method.toLowerCase())) return;
 
       final detailsMap = details as Json;
       final tags = detailsMap['tags'] as JsonList? ?? ['Default'];
       final category = tags.first.toString();
 
       final cleanedPath = path.replaceAll(RegExp(r'[{}]'), '');
-      final pathSegments = cleanedPath
-          .split('/')
-          .where((segment) => segment.isNotEmpty)
-          .toList();
+      final pathSegments = cleanedPath.split('/').where((segment) => segment.isNotEmpty).toList();
 
       if (pathSegments.length > 2) {
         pathSegments.removeRange(0, 2);
       }
 
-      final endpointName = pathSegments.join('').isEmpty
-          ? tags.first
-          : pathSegments.join('').replaceAll(" ", '');
+      final endpointName = pathSegments.join('').isEmpty ? tags.first : pathSegments.join('').replaceAll(" ", '');
 
       final parameters = _extractParameters(detailsMap, schemas);
       final response = _extractResponseBody(detailsMap, schemas);
@@ -70,9 +64,9 @@ Future<String> parseSwaggerFile(String path, String outputDir) async {
     });
   });
 
-  final abstractFile = File('$outputDir/swagger-clean.json');
-  abstractFile.writeAsStringSync(json.encode(endpointsMap));
-  return abstractFile.path;
+  final swaggerCleanFile = File('$outputDir/swagger-clean.json');
+  swaggerCleanFile.writeAsStringSync(json.encode(endpointsMap));
+  return swaggerCleanFile.path;
 }
 
 Object _parsePropertySchema(
@@ -198,8 +192,7 @@ Object? _extractResponseBody(Json details, Json schemas) {
 
   Json? responseContent;
   if (content != null) {
-    responseContent =
-        content['application/json'] as Json? ?? content.values.first as Json;
+    responseContent = content['application/json'] as Json? ?? content.values.first as Json;
   }
 
   final schema = responseContent?['schema'] as Json?;

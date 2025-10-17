@@ -2,10 +2,7 @@
 // HELPERS
 // -------------------------------------------------------
 abstract class Utils {
-  static String toPascalCase(String input) => input
-      .split(RegExp(r'_|-'))
-      .map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1))
-      .join();
+  static String toPascalCase(String input) => input.split(RegExp(r'_|-')).map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1)).join();
 
   static String toLowerCamelCase(String input) {
     final pascal = toPascalCase(input);
@@ -22,6 +19,5 @@ abstract class Utils {
     return buffer.toString();
   }
 
-  static String capitalize(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+  static String capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }

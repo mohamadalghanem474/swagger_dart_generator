@@ -6,8 +6,7 @@ import 'dart:io';
 
 import 'package:swagger_dart_generator/src/utils/utils.dart';
 
-Future<void> generateDatasources(
-    String path, String package, String outputDir) async {
+Future<void> generateDatasources(String path, String package, String outputDir, bool replace) async {
   final file = File(path);
   if (!file.existsSync()) {
     print('❌ $path not found!');
@@ -17,7 +16,7 @@ Future<void> generateDatasources(
   final jsonStr = await file.readAsString();
   final map = json.decode(jsonStr) as Map<String, dynamic>;
 
-  final baseDir = Directory('$outputDir/lib/features/data/datasources');
+  final baseDir = Directory('$outputDir/lib//data/datasources');
   if (!baseDir.existsSync()) baseDir.createSync(recursive: true);
 
   for (final categoryEntry in map.entries) {
@@ -28,12 +27,19 @@ Future<void> generateDatasources(
     categoryDir.createSync(recursive: true);
 
     final abstractFile = File(
-      '${categoryDir.path}/${categoryName}_remote_datasource.dart',
+      '${categoryDir.path}/${categoryName}.dart',
     );
+    if (abstractFile.existsSync() && !replace) {
+      print('⏭️  Skipped: ${abstractFile.path} already exists');
+      continue;
+    }
     final implFile = File(
       '${categoryDir.path}/${categoryName}_remote_datasource_impl.dart',
     );
-
+    if (implFile.existsSync() && !replace) {
+      print('⏭️  Skipped: ${implFile.path} already exists');
+      continue;
+    }
     final abstractBuffer = StringBuffer();
     final implBuffer = StringBuffer();
 
@@ -43,7 +49,7 @@ Future<void> generateDatasources(
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       abstractBuffer.writeln(
-        "import 'package:$package/features/data/models/$categoryName/requests/${snakeName}_req.dart';",
+        "import 'package:$package/data/models/$categoryName/requests/${snakeName}_req.dart';",
       );
     }
 
@@ -51,12 +57,12 @@ Future<void> generateDatasources(
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       abstractBuffer.writeln(
-        "import 'package:$package/features/data/models/$categoryName/responses/${snakeName}_res.dart';",
+        "import 'package:$package/data/models/$categoryName/responses/${snakeName}_res.dart';",
       );
     }
 
     abstractBuffer.writeln('');
-    abstractBuffer.writeln('abstract class ${category}RemoteDataSource {');
+    abstractBuffer.writeln('abstract class ${category}DataSource {');
 
     for (final endpointName in endpoints.keys) {
       final req = '${Utils.toPascalCase(endpointName)}Req';
@@ -73,15 +79,13 @@ Future<void> generateDatasources(
 
     // ---------- IMPLEMENTATION ----------
     implBuffer.writeln("import 'package:dio/dio.dart';");
-    implBuffer.writeln(
-      "import 'package:$package/features/data/datasources/$categoryName/${categoryName}_remote_datasource.dart';",
-    );
+    implBuffer.writeln("import 'package:$package/data/datasources/${categoryName}/${categoryName}.dart';");
 
     // Add imports for all individual request models
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       implBuffer.writeln(
-        "import 'package:$package/features/data/models/$categoryName/requests/${snakeName}_req.dart';",
+        "import 'package:$package/data/models/$categoryName/requests/${snakeName}_req.dart';",
       );
     }
 
@@ -89,18 +93,13 @@ Future<void> generateDatasources(
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       implBuffer.writeln(
-        "import 'package:$package/features/data/models/$categoryName/responses/${snakeName}_res.dart';",
+        "import 'package:$package/data/models/$categoryName/responses/${snakeName}_res.dart';",
       );
     }
+    implBuffer.writeln("import 'package:$package/end_points.dart';");
+    implBuffer.writeln("");
+    implBuffer.writeln("class ${category}RemoteDataSourceImpl implements ${category}DataSource {");
 
-    implBuffer.writeln("import 'package:injectable/injectable.dart';");
-    implBuffer.writeln(
-      "import 'package:$package/core/constants/end_points.dart';\n",
-    );
-
-    implBuffer.writeln(
-      '@LazySingleton(as: ${category}RemoteDataSource, env: [Environment.test, Environment.dev, Environment.prod])\nclass ${category}RemoteDataSourceImpl implements ${category}RemoteDataSource {',
-    );
     implBuffer.writeln(
       '  final Dio _dio;\n  ${category}RemoteDataSourceImpl(this._dio);\n',
     );
