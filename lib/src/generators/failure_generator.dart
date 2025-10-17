@@ -5,7 +5,7 @@ Future<void> generateFailureClasses(String outputDirectory) async {
 abstract class Failure {
   final String message;
   Failure(this.message);
-  Failure handle(dynamic e, StackTrace? stackTrace);
+  Failure handle(dynamic e, StackTrace stackTrace);
 }
 ''';
 
