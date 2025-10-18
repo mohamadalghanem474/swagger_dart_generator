@@ -8,8 +8,6 @@ abstract class Failure {
   Failure handle(dynamic e, StackTrace stackTrace);
 }
 ''';
-
   final file = File('$outputDirectory/lib/failure.dart');
   await file.writeAsString(content);
-  print('✅ Failure classes generated at: ${file.path}');
 }

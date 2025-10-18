@@ -1,12 +1,13 @@
 // -------------------------------------------------------
-// REPOSITORIES GENERATOR
+// REPOSITORIES GENERATOR (ALWAYS OVERWRITE)
 // -------------------------------------------------------
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:swagger_dart_generator/src/utils/utils.dart';
 
-Future<void> generateRepositories(String path, String package, String outputDir, bool replace) async {
+// Removed 'bool replace' and changed return type to void
+Future<void> generateRepositories(String path, String package, String outputDir) async {
   final file = File(path);
   if (!file.existsSync()) {
     print('❌ $path not found!');
@@ -27,21 +28,13 @@ Future<void> generateRepositories(String path, String package, String outputDir,
     categoryDir.createSync(recursive: true);
 
     final abstractFile = File('${categoryDir.path}/$categoryName.dart');
-    if (abstractFile.existsSync() && !replace) {
-      print('⏭️  Skipped: ${abstractFile.path} already exists');
-      continue;
-    }
     final implFile = File(
       '${categoryDir.path}/${categoryName}_repository_impl.dart',
     );
-    if (implFile.existsSync() && !replace) {
-      print('⏭️  Skipped: ${implFile.path} already exists');
-      continue;
-    }
-    final abstractBuffer = StringBuffer();
-    final implBuffer = StringBuffer();
 
     // ---------- ABSTRACT REPOSITORY ----------
+    final abstractBuffer = StringBuffer();
+
     abstractBuffer.writeln("import 'package:dartz/dartz.dart';");
     abstractBuffer.writeln("import 'package:dio/dio.dart';");
     abstractBuffer.writeln("import 'package:$package/failure.dart';");
@@ -75,10 +68,13 @@ Future<void> generateRepositories(String path, String package, String outputDir,
     }
 
     abstractBuffer.writeln('}');
+
+    // 🟢 ALWAYS OVERWRITE: Directly write the abstract file
     await abstractFile.writeAsString(abstractBuffer.toString());
-    print('✅ Created: ${abstractFile.path}');
 
     // ---------- IMPLEMENTATION ----------
+    final implBuffer = StringBuffer();
+
     implBuffer.writeln("import 'package:$package/failure.dart';");
     implBuffer.writeln("import 'package:dartz/dartz.dart';");
     implBuffer.writeln("import 'package:dio/dio.dart';");
@@ -131,7 +127,7 @@ Future<void> generateRepositories(String path, String package, String outputDir,
     }
 
     implBuffer.writeln('}');
+
     await implFile.writeAsString(implBuffer.toString());
-    print('✅ Created: ${implFile.path}');
   }
 }

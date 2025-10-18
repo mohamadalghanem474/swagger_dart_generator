@@ -7,7 +7,7 @@ import 'dart:io';
 typedef Json = Map<String, dynamic>;
 typedef JsonList = List<dynamic>;
 
-Future<String> parseSwaggerFile(String path, String outputDir, bool replace) async {
+Future<String> parseSwaggerFile(String path, String outputDir) async {
   final file = File(path);
   if (!file.existsSync()) {
     print('❌ $path not found!');
@@ -64,7 +64,7 @@ Future<String> parseSwaggerFile(String path, String outputDir, bool replace) asy
     });
   });
 
-  final swaggerCleanFile = File('$outputDir/swagger-clean.json');
+  final swaggerCleanFile = File('$outputDir/temp.json');
   swaggerCleanFile.writeAsStringSync(json.encode(endpointsMap));
   return swaggerCleanFile.path;
 }

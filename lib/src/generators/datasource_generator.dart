@@ -1,12 +1,13 @@
 // -------------------------------------------------------
-// DATASOURCES GENERATOR
+// DATASOURCES GENERATOR (ALWAYS OVERWRITE)
 // -------------------------------------------------------
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:swagger_dart_generator/src/utils/utils.dart';
 
-Future<void> generateDatasources(String path, String package, String outputDir, bool replace) async {
+// Removed 'bool replace' and changed return type to void since we always overwrite
+Future<void> generateDatasources(String path, String package, String outputDir) async {
   final file = File(path);
   if (!file.existsSync()) {
     print('❌ $path not found!');
@@ -16,8 +17,11 @@ Future<void> generateDatasources(String path, String package, String outputDir, 
   final jsonStr = await file.readAsString();
   final map = json.decode(jsonStr) as Map<String, dynamic>;
 
-  final baseDir = Directory('$outputDir/lib//data/datasources');
+  final baseDir = Directory('$outputDir/lib/data/datasources');
+  // Ensure the base directory exists
   if (!baseDir.existsSync()) baseDir.createSync(recursive: true);
+
+  int filesCreated = 0;
 
   for (final categoryEntry in map.entries) {
     final category = categoryEntry.key;
@@ -26,24 +30,12 @@ Future<void> generateDatasources(String path, String package, String outputDir, 
     final categoryDir = Directory('${baseDir.path}/$categoryName');
     categoryDir.createSync(recursive: true);
 
-    final abstractFile = File(
-      '${categoryDir.path}/${categoryName}.dart',
-    );
-    if (abstractFile.existsSync() && !replace) {
-      print('⏭️  Skipped: ${abstractFile.path} already exists');
-      continue;
-    }
-    final implFile = File(
-      '${categoryDir.path}/${categoryName}_remote_datasource_impl.dart',
-    );
-    if (implFile.existsSync() && !replace) {
-      print('⏭️  Skipped: ${implFile.path} already exists');
-      continue;
-    }
-    final abstractBuffer = StringBuffer();
-    final implBuffer = StringBuffer();
+    final abstractFile = File('${categoryDir.path}/${categoryName}.dart');
+    final implFile = File('${categoryDir.path}/${categoryName}_remote_datasource_impl.dart');
 
     // ---------- ABSTRACT DATASOURCE ----------
+    final abstractBuffer = StringBuffer();
+    
     // Add imports for all individual request models
     abstractBuffer.writeln("import 'package:dio/dio.dart';");
     for (final endpointName in endpoints.keys) {
@@ -74,10 +66,15 @@ Future<void> generateDatasources(String path, String package, String outputDir, 
     }
 
     abstractBuffer.writeln('}');
+    
+    // 🟢 ALWAYS OVERWRITE: Directly write the file
     await abstractFile.writeAsString(abstractBuffer.toString());
-    print('✅ Created: ${abstractFile.path}');
+    filesCreated++;
+
 
     // ---------- IMPLEMENTATION ----------
+    final implBuffer = StringBuffer();
+    
     implBuffer.writeln("import 'package:dio/dio.dart';");
     implBuffer.writeln("import 'package:$package/data/datasources/${categoryName}/${categoryName}.dart';");
 
@@ -130,6 +127,7 @@ Future<void> generateDatasources(String path, String package, String outputDir, 
           '    url = url.replaceAll(\'{$key}\', req.params?.$fieldName?.toString() ?? \'\');',
         );
       });
+      
       // make request
       implBuffer.write('    final result = await _dio.$method(url');
       if (endpointData['body'] != null && endpointData['body'].isNotEmpty) {
@@ -149,6 +147,7 @@ Future<void> generateDatasources(String path, String package, String outputDir, 
       // Add cancelToken parameter
       implBuffer.write(', cancelToken: cancelToken');
       implBuffer.writeln(');');
+      
       // Handle different response types
       if (endpointData['response'] is List) {
         // For List responses, use the special constructor with items
@@ -163,7 +162,9 @@ Future<void> generateDatasources(String path, String package, String outputDir, 
     }
 
     implBuffer.writeln('}');
+    
+    // 🟢 ALWAYS OVERWRITE: Directly write the file
     await implFile.writeAsString(implBuffer.toString());
-    print('✅ Created: ${implFile.path}');
+    filesCreated++;
   }
 }

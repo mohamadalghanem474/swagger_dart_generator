@@ -1,0 +1,207 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Swagger Dart Generator Example API"
+  },
+  "basePath": "/api/v1",
+  "schemes": ["https"],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "User login with email and password",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LoginRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful login",
+            "schema": {
+              "$ref": "#/definitions/LoginResponse"
+            }
+          }
+        },
+        "x-dart-category": "Auth"
+      }
+    },
+    "/user/{userId}": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get user profile by ID (Path Parameter)",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "type": "string",
+            "required": true,
+            "description": "ID of the user to fetch"
+          },
+          {
+            "name": "includeDetails",
+            "in": "query",
+            "type": "boolean",
+            "required": false,
+            "description": "Flag to include optional user details (Query Parameter)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details",
+            "schema": {
+              "$ref": "#/definitions/UserDetail"
+            }
+          }
+        },
+        "x-dart-category": "User"
+      }
+    },
+    "/products": {
+      "get": {
+        "tags": ["Product"],
+        "summary": "List all products (Array Response)",
+        "parameters": [
+          {
+            "name": "searchQuery",
+            "in": "query",
+            "type": "string",
+            "required": false,
+            "description": "Search term for products"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of products",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Product"
+              }
+            }
+          }
+        },
+        "x-dart-category": "Product"
+      },
+      "post": {
+        "tags": ["Product"],
+        "summary": "Create a new product (Complex Body Request)",
+        "parameters": [
+          {
+            "name": "productData",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Product"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Product successfully created",
+            "schema": {
+              "$ref": "#/definitions/Product"
+            }
+          }
+        },
+        "x-dart-category": "Product"
+      }
+    },
+    "/products/{id}": {
+      "delete": {
+        "tags": ["Product"],
+        "summary": "Delete a product (DELETE method)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "type": "integer",
+            "required": true,
+            "description": "ID of the product to delete"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Product deleted successfully"
+          }
+        },
+        "x-dart-category": "Product"
+      }
+    }
+  },
+  "definitions": {
+    "LoginRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "LoginResponse": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string"
+        },
+        "refreshToken": {
+          "type": "string"
+        },
+        "expiresIn": {
+          "type": "integer"
+        }
+      }
+    },
+    "UserDetail": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "user", "guest"]
+        }
+      }
+    },
+    "Product": {
+      "type": "object",
+      "properties": {
+        "productId": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "inStock": {
+          "type": "boolean"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

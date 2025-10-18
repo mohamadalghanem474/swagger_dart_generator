@@ -6,7 +6,7 @@ import 'dart:io';
 
 import 'package:swagger_dart_generator/src/utils/utils.dart';
 
-Future<void> generateEndpoints(String path, String package, String outputDir, bool replace) async {
+Future<void> generateEndpoints(String path, String package, String outputDir) async {
   final file = File(path);
   if (!file.existsSync()) {
     print('❌ $path not found!');
@@ -20,7 +20,6 @@ Future<void> generateEndpoints(String path, String package, String outputDir, bo
 
   // Main EndPoints class
   buffer.writeln("class EndPoints {");
-  buffer.writeln("  static const baseUrl = \"https://api.$package.com/\";");
   map.forEach((category, _) {
     final className = Utils.capitalize(category);
     buffer.writeln(
@@ -47,11 +46,5 @@ Future<void> generateEndpoints(String path, String package, String outputDir, bo
   final baseDir = Directory('$outputDir/lib/');
   if (!baseDir.existsSync()) baseDir.createSync(recursive: true);
   final outFile = File('${baseDir.path}/end_points.dart');
-  if (outFile.existsSync() && !replace) {
-    print('⏭️  Skipped: ${outFile.path} already exists');
-    return;
-  }
   await outFile.writeAsString(buffer.toString());
-
-  print("✅ endpoint.dart generated successfully!");
 }

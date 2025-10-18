@@ -1,0 +1,8 @@
+{
+  "query": {
+    "includeDetails": "string"
+  },
+  "params": {
+    "userId": "string"
+  }
+}
