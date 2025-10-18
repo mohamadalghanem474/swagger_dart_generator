@@ -23,7 +23,7 @@ Future<void> generateFromSwagger(bool replace) async {
   final swaggerJsonPath = '${directory.path}/swagger.json';
   final outputDirectory = '${directory.path}';
   final packageName = directory.path.split(Platform.pathSeparator).last;
-  final result = await generatePkg(outputDirectory, packageName, replace);
+  final result = await generatePkg(swaggerJsonPath,outputDirectory, packageName, replace);
   if (result) {
     final tempParsedSwaggerPath = await parseSwaggerFile(swaggerJsonPath, outputDirectory);
     await generateEndpoints(tempParsedSwaggerPath, packageName, outputDirectory);

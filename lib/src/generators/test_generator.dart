@@ -15,7 +15,7 @@ Future<void> generateIntegrationTests(String path, String package, String output
   final baseDir = Directory('$outputDir/test');
   baseDir.createSync(recursive: true);
 
-  final className = Utils.capitalize(package);
+  final className = Utils.toPascalCase(package);
 
   for (final categoryEntry in map.entries) {
     final category = categoryEntry.key;

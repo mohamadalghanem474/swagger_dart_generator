@@ -32,7 +32,7 @@ Future<void> generateApi(String path, String package, String outputDir) async {
       "import 'package:$package/data/repositories/$categoryName/${categoryName}_repository_impl.dart';",
     );
   }
-  final className = Utils.capitalize(package);
+  final className = Utils.toPascalCase(package);
   buffer.writeln('class $className {');
   buffer.writeln('  static $className? _instance;');
   buffer.writeln('  final Dio _dio;');

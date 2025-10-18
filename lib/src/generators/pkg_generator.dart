@@ -1,19 +1,21 @@
 import 'dart:io';
 
-Future<bool> generatePkg(String outputDir, String packageName, bool replaceAll) async {
+Future<bool> generatePkg(String swaggerJsonPath, String outputDir, String packageName, bool replaceAll) async {
   stdout.write('\x1B[1J\x1B[0;0H');
   print('Thank you for using swagger_dart_generator! 🚀\n');
   final outputDirHandle = Directory(outputDir);
-
-  if (replaceAll) {
-    outputDirHandle.listSync().forEach((element) {
-      if (!element.path.endsWith('swagger.json')) {
-        element.deleteSync(recursive: true);
-      }
-    });
+  if (!File(swaggerJsonPath).existsSync()) {
+    print('❌ swagger.json not found in the current directory!\n');
+    return false;
   } else {
-    if (outputDirHandle.listSync().length > 1 && outputDirHandle.listSync().any((element) => element.path.endsWith('swagger.json'))) {
-      print("If you want to replace existing package use flag --replace to replace existing package.");
+    if (replaceAll) {
+      outputDirHandle.listSync().forEach((element) {
+        if (!element.path.endsWith('swagger.json')) {
+          element.deleteSync(recursive: true);
+        }
+      });
+    } else if (File('${outputDir}/pubspec.yaml').existsSync()) {
+      print("You have already created a package in this directory. If you want to replace existing package use flag --replace to replace existing package.");
       print(" ");
       print("You can update existing dtos/models without replacing the whole package by using mg_tools. see https://pub.dev/packages/mg_tools for more details.");
       print(" ");

@@ -17,7 +17,7 @@ Future<void> generateEndpoints(String path, String package, String outputDir) as
 
   buffer.writeln("class EndPoints {");
   map.forEach((category, _) {
-    final className = Utils.capitalize(category);
+    final className = Utils.toPascalCase(category);
     buffer.writeln(
       "  static const ${Utils.toLowerCamelCase(category)} = _$className();",
     );
@@ -25,7 +25,7 @@ Future<void> generateEndpoints(String path, String package, String outputDir) as
   buffer.writeln("}\n");
 
   map.forEach((category, endpoints) {
-    final className = Utils.capitalize(category);
+    final className = Utils.toPascalCase(category);
     buffer.writeln("class _$className {");
     buffer.writeln("  const _$className();");
 
