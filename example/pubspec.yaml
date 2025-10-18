@@ -19,4 +19,5 @@ dev_dependencies:
   freezed: ^3.2.3
   json_serializable: ^6.11.1
   lints: ^6.0.0
+  mg_tools: ^1.0.13
   test: ^1.25.6

@@ -24,7 +24,7 @@ Future<bool> generatePkg(String outputDir, String packageName, bool replaceAll) 
   print('⏳ Creating $packageName Dart package...');
   final resultCreate = await Process.run("dart", ['create', '.', "--force", "-t", 'package']);
   final resultAdd = await Process.run("dart", ['pub', 'add', 'dartz', 'dio', 'freezed_annotation']);
-  final resultAddDev = await Process.run("dart", ['pub', 'add', '--dev', 'build_runner', 'flutter_lints', 'freezed', 'json_serializable']);
+  final resultAddDev = await Process.run("dart", ['pub', 'add', '--dev', 'build_runner', 'flutter_lints', 'freezed', 'json_serializable', 'mg_tools']);
   Directory('${outputDir}/example').delete(recursive: true);
   Directory('${outputDir}/test').delete(recursive: true);
   Directory('${outputDir}/lib/src').delete(recursive: true);

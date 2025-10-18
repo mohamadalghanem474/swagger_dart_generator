@@ -10,7 +10,7 @@ A powerful command-line tool that generates a complete, clean **Dart package** s
 * **Singleton Pattern:** Creates a central (`<package_name>`capital )container (`<package_name>.dart`) using lazy singletons for easy, managed access to all generated services.
 * **Model Generation:** Creates Dart classes for API **Request** and **Response** models.
 * **Testing:** Generates ready-to-use **Integration Tests** for all endpoints.
-* **Dependencies:** Automatically configures dependencies (`dio`, `dartz`, `freezed`, `build_runner`, etc.).
+* **Dependencies:** Automatically configures dependencies (`dio`, `dartz`, `freezed`, `build_runner`, `mg_tools` etc.).
 
 ---
 

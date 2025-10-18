@@ -1,6 +1,3 @@
-// -------------------------------------------------------
-// HELPERS
-// -------------------------------------------------------
 abstract class Utils {
   static String toPascalCase(String input) => input.split(RegExp(r'_|-')).map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1)).join();
 

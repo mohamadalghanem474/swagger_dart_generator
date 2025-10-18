@@ -1,10 +1,7 @@
+# 1.0.0
 
-## 7. Add a changelog
+- Initial alpha release
 
-**CHANGELOG.md:**
-```markdown
-## 1.0.0
+## 1.1.1
 
-- Initial version
-- Complete code generation from Swagger JSON
-- Support for models, datasources, repositories, controllers, and tests
+- Initial release

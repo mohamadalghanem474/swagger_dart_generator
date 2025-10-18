@@ -1,12 +1,8 @@
-// -------------------------------------------------------
-// DATASOURCES GENERATOR (ALWAYS OVERWRITE)
-// -------------------------------------------------------
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:swagger_dart_generator/src/utils/utils.dart';
 
-// Removed 'bool replace' and changed return type to void since we always overwrite
 Future<void> generateDatasources(String path, String package, String outputDir) async {
   final file = File(path);
   if (!file.existsSync()) {
@@ -18,10 +14,8 @@ Future<void> generateDatasources(String path, String package, String outputDir) 
   final map = json.decode(jsonStr) as Map<String, dynamic>;
 
   final baseDir = Directory('$outputDir/lib/data/datasources');
-  // Ensure the base directory exists
-  if (!baseDir.existsSync()) baseDir.createSync(recursive: true);
 
-  int filesCreated = 0;
+  if (!baseDir.existsSync()) baseDir.createSync(recursive: true);
 
   for (final categoryEntry in map.entries) {
     final category = categoryEntry.key;
@@ -33,10 +27,8 @@ Future<void> generateDatasources(String path, String package, String outputDir) 
     final abstractFile = File('${categoryDir.path}/${categoryName}.dart');
     final implFile = File('${categoryDir.path}/${categoryName}_remote_datasource_impl.dart');
 
-    // ---------- ABSTRACT DATASOURCE ----------
     final abstractBuffer = StringBuffer();
-    
-    // Add imports for all individual request models
+
     abstractBuffer.writeln("import 'package:dio/dio.dart';");
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
@@ -45,7 +37,6 @@ Future<void> generateDatasources(String path, String package, String outputDir) 
       );
     }
 
-    // Add imports for all individual response models
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       abstractBuffer.writeln(
@@ -66,19 +57,14 @@ Future<void> generateDatasources(String path, String package, String outputDir) 
     }
 
     abstractBuffer.writeln('}');
-    
-    // 🟢 ALWAYS OVERWRITE: Directly write the file
+
     await abstractFile.writeAsString(abstractBuffer.toString());
-    filesCreated++;
 
-
-    // ---------- IMPLEMENTATION ----------
     final implBuffer = StringBuffer();
-    
+
     implBuffer.writeln("import 'package:dio/dio.dart';");
     implBuffer.writeln("import 'package:$package/data/datasources/${categoryName}/${categoryName}.dart';");
 
-    // Add imports for all individual request models
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       implBuffer.writeln(
@@ -86,7 +72,6 @@ Future<void> generateDatasources(String path, String package, String outputDir) 
       );
     }
 
-    // Add imports for all individual response models
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       implBuffer.writeln(
@@ -114,12 +99,10 @@ Future<void> generateDatasources(String path, String package, String outputDir) 
         '  Future<$res> $methodName($req req, {CancelToken? cancelToken}) async {',
       );
 
-      // Build URL with path parameters
       implBuffer.writeln(
         '    String url = EndPoints.${Utils.toLowerCamelCase(categoryName)}.$methodName;',
       );
 
-      // Replace path parameters
       final pathParams = endpointData['params'] as Map<String, dynamic>? ?? {};
       pathParams.forEach((key, value) {
         final fieldName = Utils.toLowerCamelCase(key);
@@ -127,8 +110,7 @@ Future<void> generateDatasources(String path, String package, String outputDir) 
           '    url = url.replaceAll(\'{$key}\', req.params?.$fieldName?.toString() ?? \'\');',
         );
       });
-      
-      // make request
+
       implBuffer.write('    final result = await _dio.$method(url');
       if (endpointData['body'] != null && endpointData['body'].isNotEmpty) {
         if (endpointData['body'] is Map<String, dynamic>) {
@@ -144,27 +126,21 @@ Future<void> generateDatasources(String path, String package, String outputDir) 
           implBuffer.write(', queryParameters: req.query');
         }
       }
-      // Add cancelToken parameter
+
       implBuffer.write(', cancelToken: cancelToken');
       implBuffer.writeln(');');
-      
-      // Handle different response types
+
       if (endpointData['response'] is List) {
-        // For List responses, use the special constructor with items
         implBuffer.writeln(
           '    return $res(items: (result.data as List).map((e) => ${res}Item.fromJson(e)).toList());',
         );
       } else {
-        // For normal object responses, use standard fromJson
         implBuffer.writeln('    return $res.fromJson(result.data);');
       }
       implBuffer.writeln('  }\n');
     }
 
     implBuffer.writeln('}');
-    
-    // 🟢 ALWAYS OVERWRITE: Directly write the file
     await implFile.writeAsString(implBuffer.toString());
-    filesCreated++;
   }
 }

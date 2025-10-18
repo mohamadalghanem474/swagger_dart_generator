@@ -1,6 +1,3 @@
-// -------------------------------------------------------
-// ENDPOINTS GENERATOR
-// -------------------------------------------------------
 import 'dart:convert';
 import 'dart:io';
 
@@ -18,7 +15,6 @@ Future<void> generateEndpoints(String path, String package, String outputDir) as
 
   final buffer = StringBuffer();
 
-  // Main EndPoints class
   buffer.writeln("class EndPoints {");
   map.forEach((category, _) {
     final className = Utils.capitalize(category);
@@ -28,7 +24,6 @@ Future<void> generateEndpoints(String path, String package, String outputDir) as
   });
   buffer.writeln("}\n");
 
-  // Nested classes
   map.forEach((category, endpoints) {
     final className = Utils.capitalize(category);
     buffer.writeln("class _$className {");
@@ -42,7 +37,7 @@ Future<void> generateEndpoints(String path, String package, String outputDir) as
 
     buffer.writeln("}\n");
   });
-  // Write output to a Dart file
+
   final baseDir = Directory('$outputDir/lib/');
   if (!baseDir.existsSync()) baseDir.createSync(recursive: true);
   final outFile = File('${baseDir.path}/end_points.dart');

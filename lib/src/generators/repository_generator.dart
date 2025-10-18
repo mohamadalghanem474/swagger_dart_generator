@@ -1,6 +1,3 @@
-// -------------------------------------------------------
-// REPOSITORIES GENERATOR (ALWAYS OVERWRITE)
-// -------------------------------------------------------
 import 'dart:convert';
 import 'dart:io';
 
@@ -32,14 +29,12 @@ Future<void> generateRepositories(String path, String package, String outputDir)
       '${categoryDir.path}/${categoryName}_repository_impl.dart',
     );
 
-    // ---------- ABSTRACT REPOSITORY ----------
     final abstractBuffer = StringBuffer();
 
     abstractBuffer.writeln("import 'package:dartz/dartz.dart';");
     abstractBuffer.writeln("import 'package:dio/dio.dart';");
     abstractBuffer.writeln("import 'package:$package/failure.dart';");
 
-    // Import individual request models
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       abstractBuffer.writeln(
@@ -47,7 +42,6 @@ Future<void> generateRepositories(String path, String package, String outputDir)
       );
     }
 
-    // Import individual response models
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       abstractBuffer.writeln(
@@ -69,10 +63,8 @@ Future<void> generateRepositories(String path, String package, String outputDir)
 
     abstractBuffer.writeln('}');
 
-    // 🟢 ALWAYS OVERWRITE: Directly write the abstract file
     await abstractFile.writeAsString(abstractBuffer.toString());
 
-    // ---------- IMPLEMENTATION ----------
     final implBuffer = StringBuffer();
 
     implBuffer.writeln("import 'package:$package/failure.dart';");
@@ -85,7 +77,6 @@ Future<void> generateRepositories(String path, String package, String outputDir)
       "import 'package:$package/data/datasources/$categoryName/${categoryName}.dart';",
     );
 
-    // Import individual request models
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       implBuffer.writeln(
@@ -93,7 +84,6 @@ Future<void> generateRepositories(String path, String package, String outputDir)
       );
     }
 
-    // Import individual response models
     for (final endpointName in endpoints.keys) {
       final snakeName = Utils.toSnakeCase(endpointName);
       implBuffer.writeln(
