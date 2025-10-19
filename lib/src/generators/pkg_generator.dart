@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:swagger_dart_generator/src/utils/keep_file.dart';
+
 Future<bool> generatePkg(String swaggerJsonPath, String outputDir, String packageName, bool replaceAll) async {
   stdout.write('\x1B[1J\x1B[0;0H');
   print('Thank you for using swagger_dart_generator! 🚀\n');
@@ -10,7 +12,8 @@ Future<bool> generatePkg(String swaggerJsonPath, String outputDir, String packag
   } else {
     if (replaceAll) {
       outputDirHandle.listSync().forEach((element) {
-        if (!element.path.endsWith('swagger.json') && !element.path.endsWith('.git') && !element.path.endsWith('.gitignore')) {
+        final shouldKeep = keepFiles.any((pattern) => element.path.endsWith(pattern));
+        if (!shouldKeep) {
           element.deleteSync(recursive: true);
         }
       });

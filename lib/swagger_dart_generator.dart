@@ -17,6 +17,7 @@ import 'package:swagger_dart_generator/src/generators/datasource_generator.dart'
 import 'package:swagger_dart_generator/src/generators/repository_generator.dart';
 import 'package:swagger_dart_generator/src/generators/endpoint_generator.dart';
 import 'package:swagger_dart_generator/src/generators/test_generator.dart';
+import 'package:swagger_dart_generator/src/utils/keep_file.dart';
 
 Future<void> generateFromSwagger(bool replace) async {
   final directory = Directory.current;
@@ -36,7 +37,8 @@ Future<void> generateFromSwagger(bool replace) async {
     final result = await mgToolsAndBuildRunner();
     if (!result) {
       directory.listSync().forEach((element) {
-        if (!element.path.endsWith('swagger.json') && !element.path.endsWith('.git') && !element.path.endsWith('.gitignore')) {
+        final shouldKeep = keepFiles.any((pattern) => element.path.endsWith(pattern));
+        if (!shouldKeep) {
           element.deleteSync(recursive: true);
         }
       });
