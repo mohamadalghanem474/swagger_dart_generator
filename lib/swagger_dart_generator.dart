@@ -36,7 +36,7 @@ Future<void> generateFromSwagger(bool replace) async {
     final result = await mgToolsAndBuildRunner();
     if (!result) {
       directory.listSync().forEach((element) {
-        if (!element.path.endsWith('swagger.json')) {
+        if (!element.path.endsWith('swagger.json') && !element.path.endsWith('.git') && !element.path.endsWith('.gitignore')) {
           element.deleteSync(recursive: true);
         }
       });

@@ -1,6 +1,6 @@
 name: swagger_dart_generator
 description: A Dart code generator that creates complete Data Layer a Package for Flutter project structure from Swagger/OpenAPI JSON files
-version: 1.1.6
+version: 1.1.7
 homepage: https://github.com/mohamadalghanem474/swagger_dart_generator
 repository: https://github.com/mohamadalghanem474/swagger_dart_generator
 issue_tracker: https://github.com/mohamadalghanem474/swagger_dart_generator/issues

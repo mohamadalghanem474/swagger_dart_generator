@@ -10,7 +10,7 @@ Future<bool> generatePkg(String swaggerJsonPath, String outputDir, String packag
   } else {
     if (replaceAll) {
       outputDirHandle.listSync().forEach((element) {
-        if (!element.path.endsWith('swagger.json')) {
+        if (!element.path.endsWith('swagger.json') && !element.path.endsWith('.git') && !element.path.endsWith('.gitignore')) {
           element.deleteSync(recursive: true);
         }
       });
