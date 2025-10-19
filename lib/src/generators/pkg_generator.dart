@@ -25,12 +25,13 @@ Future<bool> generatePkg(String swaggerJsonPath, String outputDir, String packag
 
   print('⏳ Creating $packageName Dart package...');
   final resultCreate = await Process.run("dart", ['create', '.', "--force", "-t", 'package']);
+  final resultAddDevMgTools = await Process.run("dart", ['pub', 'add', '--dev', 'mg_tools']);
   final resultAdd = await Process.run("dart", ['pub', 'add', 'dartz', 'dio', 'freezed_annotation']);
-  final resultAddDev = await Process.run("dart", ['pub', 'add', '--dev', 'build_runner', 'flutter_lints', 'freezed', 'json_serializable', 'mg_tools']);
+  final resultAddDev = await Process.run("dart", ['pub', 'add', '--dev', 'build_runner', 'flutter_lints', 'freezed', 'json_serializable']);
   Directory('${outputDir}/example').delete(recursive: true);
   Directory('${outputDir}/test').delete(recursive: true);
   Directory('${outputDir}/lib/src').delete(recursive: true);
-  if (resultCreate.exitCode != 0 || resultAdd.exitCode != 0 || resultAddDev.exitCode != 0) {
+  if (resultAddDevMgTools.exitCode != 0 || resultCreate.exitCode != 0 || resultAdd.exitCode != 0 || resultAddDev.exitCode != 0) {
     throw Exception('Failed to create package or add dependencies:\n${resultCreate.stdout}\n${resultCreate.stderr}\n${resultAdd.stdout}\n${resultAdd.stderr}\n${resultAddDev.stdout}\n${resultAddDev.stderr}');
   }
   return true;

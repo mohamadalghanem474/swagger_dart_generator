@@ -23,7 +23,7 @@ Future<void> generateFromSwagger(bool replace) async {
   final swaggerJsonPath = '${directory.path}/swagger.json';
   final outputDirectory = '${directory.path}';
   final packageName = directory.path.split(Platform.pathSeparator).last;
-  final result = await generatePkg(swaggerJsonPath,outputDirectory, packageName, replace);
+  final result = await generatePkg(swaggerJsonPath, outputDirectory, packageName, replace);
   if (result) {
     final tempParsedSwaggerPath = await parseSwaggerFile(swaggerJsonPath, outputDirectory);
     await generateEndpoints(tempParsedSwaggerPath, packageName, outputDirectory);
@@ -33,7 +33,14 @@ Future<void> generateFromSwagger(bool replace) async {
     await generateApi(tempParsedSwaggerPath, packageName, outputDirectory);
     await generateFailureClasses(outputDirectory);
     await generateIntegrationTests(tempParsedSwaggerPath, packageName, outputDirectory);
-    await mgToolsAndBuildRunner();
+    final result = await mgToolsAndBuildRunner();
+    if (!result) {
+      directory.listSync().forEach((element) {
+        if (!element.path.endsWith('swagger.json')) {
+          element.deleteSync(recursive: true);
+        }
+      });
+    }
     await File(tempParsedSwaggerPath).delete(recursive: true);
   }
 }
