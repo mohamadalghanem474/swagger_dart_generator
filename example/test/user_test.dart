@@ -17,7 +17,7 @@ class ExampleFailure extends Failure {
 void main() {
   final dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
   final api = Example.getInstance(dio, ExampleFailure(""));
-  final repo = api.repository.user;
+  final repo = api.user;
 
   test('useruserId', () async {
     final req = UseruserIdReq();

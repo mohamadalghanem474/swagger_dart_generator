@@ -53,7 +53,7 @@ class ${className}Failure extends Failure {
     buffer.writeln('void main() {');
     buffer.writeln("  final dio = Dio(BaseOptions(baseUrl: 'https://api.$package.com'));");
     buffer.writeln("  final api = $className.getInstance(dio, ${className}Failure(\"\"));");
-    buffer.writeln("  final repo = api.repository.$categoryRepositoryCamel;");
+    buffer.writeln("  final repo = api.$categoryRepositoryCamel;");
     buffer.writeln('');
     for (final endpointName in endpoints.keys) {
       final method = Utils.toLowerCamelCase(endpointName);

@@ -19,23 +19,12 @@ class Example {
   Example._internal(this._dio, this.mainFailure);
   static Example getInstance(Dio dio, Failure mainFailure) => _instance ??= Example._internal(dio, mainFailure);
 
-  Repository? _repository;
-  Repository get repository => _repository ??= Repository.getInstance(_dio, mainFailure);
-}
-
-class Repository {
-  static Repository? _instance;
-  final Dio _dio;
-  final Failure mainFailure;
-  Repository._internal(this._dio, this.mainFailure);
-  static Repository getInstance(Dio dio, Failure mainFailure) => _instance ??= Repository._internal(dio, mainFailure);
-
   AuthRepository? _auth;
-  AuthRepository get auth => _auth ??= AuthRepositoryImpl(DataSource.getInstance(_dio).auth, mainFailure);
+  AuthRepository get auth => _auth ??= AuthRepositoryImpl(AuthRemoteDataSourceImpl(_dio), mainFailure);
   UserRepository? _user;
-  UserRepository get user => _user ??= UserRepositoryImpl(DataSource.getInstance(_dio).user, mainFailure);
+  UserRepository get user => _user ??= UserRepositoryImpl(UserRemoteDataSourceImpl(_dio), mainFailure);
   ProductRepository? _product;
-  ProductRepository get product => _product ??= ProductRepositoryImpl(DataSource.getInstance(_dio).product, mainFailure);
+  ProductRepository get product => _product ??= ProductRepositoryImpl(ProductRemoteDataSourceImpl(_dio), mainFailure);
 }
 
 class DataSource {
