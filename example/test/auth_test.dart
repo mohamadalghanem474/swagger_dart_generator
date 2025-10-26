@@ -14,6 +14,7 @@ class ExampleFailure extends Failure {
     return ExampleFailure("${e.toString()} \n ${stackTrace.toString()}");
   }
 }
+
 void main() {
   final dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
   final api = Example.getInstance(dio, ExampleFailure(""));
@@ -24,5 +25,4 @@ void main() {
     final result = await repo.authlogin(req);
     expect(result.isRight(), true);
   });
-
 }

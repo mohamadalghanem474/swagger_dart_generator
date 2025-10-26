@@ -11,18 +11,23 @@ class ProductRemoteDataSourceImpl implements ProductDataSource {
   ProductRemoteDataSourceImpl(this._dio);
 
   @override
-  Future<ProductsRes> products(ProductsReq req, {CancelToken? cancelToken}) async {
+  Future<ProductsRes> products(
+    ProductsReq req, {
+    CancelToken? cancelToken,
+  }) async {
     String url = EndPoints.product.products;
     final result = await _dio.post(url, cancelToken: cancelToken);
     return ProductsRes.fromJson(result.data);
   }
 
   @override
-  Future<ProductsidRes> productsid(ProductsidReq req, {CancelToken? cancelToken}) async {
+  Future<ProductsidRes> productsid(
+    ProductsidReq req, {
+    CancelToken? cancelToken,
+  }) async {
     String url = EndPoints.product.productsid;
     url = url.replaceAll('{id}', req.params?.id?.toString() ?? '');
     final result = await _dio.delete(url, cancelToken: cancelToken);
     return ProductsidRes.fromJson(result.data);
   }
-
 }

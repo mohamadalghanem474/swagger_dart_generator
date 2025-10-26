@@ -9,10 +9,12 @@ class AuthRemoteDataSourceImpl implements AuthDataSource {
   AuthRemoteDataSourceImpl(this._dio);
 
   @override
-  Future<AuthloginRes> authlogin(AuthloginReq req, {CancelToken? cancelToken}) async {
+  Future<AuthloginRes> authlogin(
+    AuthloginReq req, {
+    CancelToken? cancelToken,
+  }) async {
     String url = EndPoints.auth.authlogin;
     final result = await _dio.post(url, cancelToken: cancelToken);
     return AuthloginRes.fromJson(result.data);
   }
-
 }

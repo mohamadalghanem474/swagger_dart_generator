@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:swagger_dart_generator/src/utils/utils.dart';
 
-
 Future<void> generateIntegrationTests(String path, String package, String outputDir) async {
   final file = File(path);
   if (!file.existsSync()) {
@@ -14,9 +13,6 @@ Future<void> generateIntegrationTests(String path, String package, String output
   final map = json.decode(jsonStr) as Map<String, dynamic>;
   final baseDir = Directory('$outputDir/test');
   baseDir.createSync(recursive: true);
-
-  final className = Utils.toPascalCase(package);
-
   for (final categoryEntry in map.entries) {
     final category = categoryEntry.key;
     final endpoints = categoryEntry.value as Map<String, dynamic>;
@@ -40,7 +36,6 @@ Future<void> generateIntegrationTests(String path, String package, String output
     }
     buffer.writeln("import 'package:test/test.dart';");
     buffer.writeln('');
-    
     buffer.writeln('void main() {');
     buffer.writeln("  final dio = Dio(BaseOptions(baseUrl: 'https://api.$package.com'));");
     buffer.writeln("  final api = IcarryApi.getInstance(dio, DefaultFailure());");

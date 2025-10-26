@@ -13,13 +13,18 @@ class UserRepositoryImpl implements UserRepository {
   UserRepositoryImpl(this._dataSource, this.failure);
 
   @override
-  Future<Either<Failure, UseruserIdRes>> useruserId(UseruserIdReq req, {CancelToken? cancelToken}) async {
+  Future<Either<Failure, UseruserIdRes>> useruserId(
+    UseruserIdReq req, {
+    CancelToken? cancelToken,
+  }) async {
     try {
-      final result = await _dataSource.useruserId(req, cancelToken: cancelToken);
+      final result = await _dataSource.useruserId(
+        req,
+        cancelToken: cancelToken,
+      );
       return Right(result);
     } catch (e, stackTrace) {
       return Left(failure.handle(e, stackTrace));
     }
   }
-
 }

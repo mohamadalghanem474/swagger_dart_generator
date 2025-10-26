@@ -9,11 +9,17 @@ class UserRemoteDataSourceImpl implements UserDataSource {
   UserRemoteDataSourceImpl(this._dio);
 
   @override
-  Future<UseruserIdRes> useruserId(UseruserIdReq req, {CancelToken? cancelToken}) async {
+  Future<UseruserIdRes> useruserId(
+    UseruserIdReq req, {
+    CancelToken? cancelToken,
+  }) async {
     String url = EndPoints.user.useruserId;
     url = url.replaceAll('{userId}', req.params?.userId?.toString() ?? '');
-    final result = await _dio.get(url, queryParameters: req.query?.toJson(), cancelToken: cancelToken);
+    final result = await _dio.get(
+      url,
+      queryParameters: req.query?.toJson(),
+      cancelToken: cancelToken,
+    );
     return UseruserIdRes.fromJson(result.data);
   }
-
 }

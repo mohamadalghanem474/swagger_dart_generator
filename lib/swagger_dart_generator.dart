@@ -23,14 +23,14 @@ Future<void> generateFromSwagger() async {
   final swaggerJsonPath = '${directory.path}/swagger.json';
   final outputDirectory = '${directory.path}';
   final packageName = directory.path.split(Platform.pathSeparator).last;
-    await generatePkg(swaggerJsonPath, outputDirectory, packageName);
-    final tempParsedSwaggerPath = await parseSwaggerFile(swaggerJsonPath, outputDirectory);
-    await generateEndpoints(tempParsedSwaggerPath, packageName, outputDirectory);
-    await generateModels(tempParsedSwaggerPath, packageName, outputDirectory);
-    await generateDatasources(tempParsedSwaggerPath, packageName, outputDirectory);
-    await generateRepositories(tempParsedSwaggerPath, packageName, outputDirectory);
-    await generateApi(tempParsedSwaggerPath, packageName, outputDirectory);
-    await generateFailureClasses(outputDirectory);
-    await generateIntegrationTests(tempParsedSwaggerPath, packageName, outputDirectory);
-    await mgToolsAndBuildRunner(tempParsedSwaggerPath);
+  await generatePkg(swaggerJsonPath, outputDirectory, packageName);
+  final tempParsedSwaggerPath = await parseSwaggerFile(swaggerJsonPath, outputDirectory);
+  await generateEndpoints(tempParsedSwaggerPath, packageName, outputDirectory);
+  await generateModels(tempParsedSwaggerPath, packageName, outputDirectory);
+  await generateDatasources(tempParsedSwaggerPath, packageName, outputDirectory);
+  await generateRepositories(tempParsedSwaggerPath, packageName, outputDirectory);
+  await generateApi(tempParsedSwaggerPath, packageName, outputDirectory);
+  await generateFailureClasses(outputDirectory);
+  await generateIntegrationTests(tempParsedSwaggerPath, packageName, outputDirectory);
+  await mgToolsAndBuildRunner(tempParsedSwaggerPath);
 }
