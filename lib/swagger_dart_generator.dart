@@ -32,5 +32,5 @@ Future<void> generateFromSwagger() async {
   await generateApi(tempParsedSwaggerPath, packageName, outputDirectory);
   await generateFailureClasses(outputDirectory);
   await generateIntegrationTests(tempParsedSwaggerPath, packageName, outputDirectory);
-  await mgToolsAndBuildRunner(tempParsedSwaggerPath);
+  await runMgTools(tempParsedSwaggerPath);
 }
