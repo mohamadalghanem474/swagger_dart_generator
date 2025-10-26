@@ -3,9 +3,22 @@ import 'dart:io';
 Future<void> generateFailureClasses(String outputDirectory) async {
   final content = '''
 abstract class Failure {
+  FailureDetails handle(dynamic e, StackTrace stackTrace);
+}
+
+class DefaultFailure extends Failure {
+  @override
+  FailureDetails handle(dynamic e, StackTrace stackTrace) {
+    return FailureDetails(message: e.toString(), stackTrace: stackTrace);
+  }
+}
+
+class FailureDetails {
   final String message;
-  Failure(this.message);
-  Failure handle(dynamic e, StackTrace stackTrace);
+  final StackTrace stackTrace;
+  final bool show;
+  final Object? extra;
+  FailureDetails({required this.message, required this.stackTrace, this.show = true, this.extra});
 }
 ''';
   final file = File('$outputDirectory/lib/failure.dart');

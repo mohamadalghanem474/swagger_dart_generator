@@ -17,15 +17,13 @@ import 'package:swagger_dart_generator/src/generators/datasource_generator.dart'
 import 'package:swagger_dart_generator/src/generators/repository_generator.dart';
 import 'package:swagger_dart_generator/src/generators/endpoint_generator.dart';
 import 'package:swagger_dart_generator/src/generators/test_generator.dart';
-import 'package:swagger_dart_generator/src/utils/keep_file.dart';
 
-Future<void> generateFromSwagger(bool replace) async {
+Future<void> generateFromSwagger() async {
   final directory = Directory.current;
   final swaggerJsonPath = '${directory.path}/swagger.json';
   final outputDirectory = '${directory.path}';
   final packageName = directory.path.split(Platform.pathSeparator).last;
-  final result = await generatePkg(swaggerJsonPath, outputDirectory, packageName, replace);
-  if (result) {
+    await generatePkg(swaggerJsonPath, outputDirectory, packageName);
     final tempParsedSwaggerPath = await parseSwaggerFile(swaggerJsonPath, outputDirectory);
     await generateEndpoints(tempParsedSwaggerPath, packageName, outputDirectory);
     await generateModels(tempParsedSwaggerPath, packageName, outputDirectory);
@@ -34,15 +32,5 @@ Future<void> generateFromSwagger(bool replace) async {
     await generateApi(tempParsedSwaggerPath, packageName, outputDirectory);
     await generateFailureClasses(outputDirectory);
     await generateIntegrationTests(tempParsedSwaggerPath, packageName, outputDirectory);
-    final result = await mgToolsAndBuildRunner();
-    if (!result) {
-      directory.listSync().forEach((element) {
-        final shouldKeep = keepFiles.any((pattern) => element.path.endsWith(pattern));
-        if (!shouldKeep) {
-          element.deleteSync(recursive: true);
-        }
-      });
-    }
-    await File(tempParsedSwaggerPath).delete(recursive: true);
-  }
+    await mgToolsAndBuildRunner(tempParsedSwaggerPath);
 }

@@ -57,7 +57,7 @@ Future<void> generateRepositories(String path, String package, String outputDir)
       final res = '${Utils.toPascalCase(endpointName)}Res';
       final methodName = Utils.toLowerCamelCase(endpointName);
       abstractBuffer.writeln(
-        '  Future<Either<Failure, $res>> $methodName($req req, {CancelToken? cancelToken});',
+        '  Future<Either<FailureDetails, $res>> $methodName($req req, {CancelToken? cancelToken});',
       );
     }
 
@@ -103,7 +103,7 @@ Future<void> generateRepositories(String path, String package, String outputDir)
 
       implBuffer.writeln('  @override');
       implBuffer.writeln(
-        '  Future<Either<Failure, $res>> $methodName($req req, {CancelToken? cancelToken}) async {',
+        '  Future<Either<FailureDetails, $res>> $methodName($req req, {CancelToken? cancelToken}) async {',
       );
       implBuffer.writeln('    try {');
       implBuffer.writeln(

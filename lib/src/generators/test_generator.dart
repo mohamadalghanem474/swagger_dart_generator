@@ -41,18 +41,9 @@ Future<void> generateIntegrationTests(String path, String package, String output
     buffer.writeln("import 'package:test/test.dart';");
     buffer.writeln('');
     
-    buffer.writeln('''
-class ${className}Failure extends Failure {
-  ${className}Failure(super.message);
-  @override
-  Failure handle(dynamic e, StackTrace stackTrace) {
-    return ${className}Failure("\${e.toString()} \\n \${stackTrace.toString()}");
-  }
-}''');
-    
     buffer.writeln('void main() {');
     buffer.writeln("  final dio = Dio(BaseOptions(baseUrl: 'https://api.$package.com'));");
-    buffer.writeln("  final api = $className.getInstance(dio, ${className}Failure(\"\"));");
+    buffer.writeln("  final api = IcarryApi.getInstance(dio, DefaultFailure());");
     buffer.writeln("  final repo = api.repository.$categoryRepositoryCamel;");
     buffer.writeln('');
     for (final endpointName in endpoints.keys) {
