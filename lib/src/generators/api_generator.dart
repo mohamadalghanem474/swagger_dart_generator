@@ -38,16 +38,16 @@ Future<void> generateApi(String path, String package, String outputDir) async {
   buffer.writeln('  final Dio _dio;');
   buffer.writeln('  final Failure mainFailure;');
   buffer.writeln('  $className._internal(this._dio, this.mainFailure);');
-  buffer.writeln('  static $className getInstance(Dio dio, Failure mainFailure) => _instance ??= $className._internal(dio, mainFailure);\n');
+  buffer.writeln('  static $className init(Dio dio, [Failure mainFailure = const DefaultFailure()]) => _instance ??= $className._internal(dio, mainFailure);\n');
   buffer.writeln('  Repository? _repository;');
-  buffer.writeln('  Repository get repository => _repository ??= Repository.getInstance(_dio, mainFailure);');
+  buffer.writeln('  Repository get repository => _repository ??= Repository.init(_dio, mainFailure);');
   buffer.writeln('}\n');
   buffer.writeln('class Repository {');
   buffer.writeln('  static Repository? _instance;');
   buffer.writeln('  final Dio _dio;');
   buffer.writeln('  final Failure mainFailure;');
   buffer.writeln('  Repository._internal(this._dio, this.mainFailure);');
-  buffer.writeln('  static Repository getInstance(Dio dio, Failure mainFailure) => _instance ??= Repository._internal(dio, mainFailure);\n');
+  buffer.writeln('  static Repository init(Dio dio, Failure mainFailure) => _instance ??= Repository._internal(dio, mainFailure);\n');
   for (final categoryEntry in map.entries) {
     final category = categoryEntry.key;
     final camelName = Utils.toLowerCamelCase(category);
@@ -55,7 +55,7 @@ Future<void> generateApi(String path, String package, String outputDir) async {
       '  ${category}Repository? _$camelName;',
     );
     buffer.writeln(
-      '  ${category}Repository get $camelName => _$camelName ??= ${category}RepositoryImpl(DataSource.getInstance(_dio).$camelName, mainFailure);',
+      '  ${category}Repository get $camelName => _$camelName ??= ${category}RepositoryImpl(DataSource.init(_dio).$camelName, mainFailure);',
     );
   }
 
@@ -64,7 +64,7 @@ Future<void> generateApi(String path, String package, String outputDir) async {
   buffer.writeln('  static DataSource? _instance;');
   buffer.writeln('  final Dio _dio;');
   buffer.writeln('  DataSource._internal(this._dio);');
-  buffer.writeln('  static DataSource getInstance(Dio dio) => _instance ??= DataSource._internal(dio);\n');
+  buffer.writeln('  static DataSource init(Dio dio) => _instance ??= DataSource._internal(dio);\n');
   for (final categoryEntry in map.entries) {
     final category = categoryEntry.key;
     final camelName = Utils.toLowerCamelCase(category);

@@ -19,3 +19,4 @@ class _Product {
   final String products = "/products";
   final String productsid = "/products/{id}";
 }
+

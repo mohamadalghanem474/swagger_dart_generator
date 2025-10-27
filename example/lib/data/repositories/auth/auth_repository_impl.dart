@@ -13,10 +13,7 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this._dataSource, this.failure);
 
   @override
-  Future<Either<Failure, AuthloginRes>> authlogin(
-    AuthloginReq req, {
-    CancelToken? cancelToken,
-  }) async {
+  Future<Either<FailureDetails, AuthloginRes>> authlogin(AuthloginReq req, {CancelToken? cancelToken}) async {
     try {
       final result = await _dataSource.authlogin(req, cancelToken: cancelToken);
       return Right(result);
@@ -24,4 +21,5 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(failure.handle(e, stackTrace));
     }
   }
+
 }

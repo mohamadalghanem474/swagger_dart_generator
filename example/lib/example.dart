@@ -12,40 +12,42 @@ import 'package:example/data/datasources/product/product.dart';
 import 'package:example/data/datasources/product/product_remote_datasource_impl.dart';
 import 'package:example/data/repositories/product/product.dart';
 import 'package:example/data/repositories/product/product_repository_impl.dart';
-
 class Example {
   static Example? _instance;
   final Dio _dio;
   final Failure mainFailure;
   Example._internal(this._dio, this.mainFailure);
-  static Example getInstance(Dio dio, Failure mainFailure) =>
-      _instance ??= Example._internal(dio, mainFailure);
+  static Example init(Dio dio, [Failure mainFailure = const DefaultFailure()]) => _instance ??= Example._internal(dio, mainFailure);
+
+  Repository? _repository;
+  Repository get repository => _repository ??= Repository.init(_dio, mainFailure);
+}
+
+class Repository {
+  static Repository? _instance;
+  final Dio _dio;
+  final Failure mainFailure;
+  Repository._internal(this._dio, this.mainFailure);
+  static Repository init(Dio dio, Failure mainFailure) => _instance ??= Repository._internal(dio, mainFailure);
 
   AuthRepository? _auth;
-  AuthRepository get auth =>
-      _auth ??= AuthRepositoryImpl(AuthRemoteDataSourceImpl(_dio), mainFailure);
+  AuthRepository get auth => _auth ??= AuthRepositoryImpl(DataSource.init(_dio).auth, mainFailure);
   UserRepository? _user;
-  UserRepository get user =>
-      _user ??= UserRepositoryImpl(UserRemoteDataSourceImpl(_dio), mainFailure);
+  UserRepository get user => _user ??= UserRepositoryImpl(DataSource.init(_dio).user, mainFailure);
   ProductRepository? _product;
-  ProductRepository get product => _product ??= ProductRepositoryImpl(
-    ProductRemoteDataSourceImpl(_dio),
-    mainFailure,
-  );
+  ProductRepository get product => _product ??= ProductRepositoryImpl(DataSource.init(_dio).product, mainFailure);
 }
 
 class DataSource {
   static DataSource? _instance;
   final Dio _dio;
   DataSource._internal(this._dio);
-  static DataSource getInstance(Dio dio) =>
-      _instance ??= DataSource._internal(dio);
+  static DataSource init(Dio dio) => _instance ??= DataSource._internal(dio);
 
   AuthDataSource? _auth;
   AuthDataSource get auth => _auth ??= AuthRemoteDataSourceImpl(_dio);
   UserDataSource? _user;
   UserDataSource get user => _user ??= UserRemoteDataSourceImpl(_dio);
   ProductDataSource? _product;
-  ProductDataSource get product =>
-      _product ??= ProductRemoteDataSourceImpl(_dio);
+  ProductDataSource get product => _product ??= ProductRemoteDataSourceImpl(_dio);
 }

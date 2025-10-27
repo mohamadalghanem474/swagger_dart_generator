@@ -6,8 +6,7 @@ import 'dart:convert';
 part 'products_res.freezed.dart';
 part 'products_res.g.dart';
 
-ProductsRes productsResFromJsonString(String str) =>
-    ProductsRes.fromJson(json.decode(str));
+ProductsRes productsResFromJsonString(String str) => ProductsRes.fromJson(json.decode(str));
 
 String productsResToJsonString(ProductsRes data) => json.encode(data.toJson());
 
@@ -15,6 +14,8 @@ String productsResToJsonString(ProductsRes data) => json.encode(data.toJson());
 abstract class ProductsRes with _$ProductsRes {
   const factory ProductsRes() = _ProductsRes;
 
-  factory ProductsRes.fromJson(Map<String, dynamic> json) =>
-      _$ProductsResFromJson(json);
+  factory ProductsRes.fromJson(Map<String, dynamic> json) => _$ProductsResFromJson(json);
 }
+
+
+

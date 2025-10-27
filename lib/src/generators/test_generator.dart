@@ -38,7 +38,7 @@ Future<void> generateIntegrationTests(String path, String package, String output
     buffer.writeln('');
     buffer.writeln('void main() {');
     buffer.writeln("  final dio = Dio(BaseOptions(baseUrl: 'https://api.$package.com'));");
-    buffer.writeln("  final api = IcarryApi.getInstance(dio, DefaultFailure());");
+    buffer.writeln("  final api = ${Utils.toPascalCase(package)}.init(dio);");
     buffer.writeln("  final repo = api.repository.$categoryRepositoryCamel;");
     buffer.writeln('');
     for (final endpointName in endpoints.keys) {

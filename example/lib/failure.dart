@@ -1,5 +1,21 @@
 abstract class Failure {
-  final String message;
-  Failure(this.message);
-  Failure handle(dynamic e, StackTrace stackTrace);
+  const Failure();
+  FailureDetails handle(dynamic e, StackTrace stackTrace);
 }
+
+class DefaultFailure extends Failure {
+  const DefaultFailure();
+  @override
+  FailureDetails handle(dynamic e, StackTrace stackTrace) {
+    return FailureDetails(message: e.toString(), stackTrace: stackTrace);
+  }
+}
+
+class FailureDetails {
+  final String message;
+  final StackTrace stackTrace;
+  final bool show;
+  final Object? extra;
+  const FailureDetails({required this.message, required this.stackTrace, this.show = true, this.extra});
+}
+

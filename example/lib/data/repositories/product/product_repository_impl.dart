@@ -15,10 +15,7 @@ class ProductRepositoryImpl implements ProductRepository {
   ProductRepositoryImpl(this._dataSource, this.failure);
 
   @override
-  Future<Either<Failure, ProductsRes>> products(
-    ProductsReq req, {
-    CancelToken? cancelToken,
-  }) async {
+  Future<Either<FailureDetails, ProductsRes>> products(ProductsReq req, {CancelToken? cancelToken}) async {
     try {
       final result = await _dataSource.products(req, cancelToken: cancelToken);
       return Right(result);
@@ -28,18 +25,13 @@ class ProductRepositoryImpl implements ProductRepository {
   }
 
   @override
-  Future<Either<Failure, ProductsidRes>> productsid(
-    ProductsidReq req, {
-    CancelToken? cancelToken,
-  }) async {
+  Future<Either<FailureDetails, ProductsidRes>> productsid(ProductsidReq req, {CancelToken? cancelToken}) async {
     try {
-      final result = await _dataSource.productsid(
-        req,
-        cancelToken: cancelToken,
-      );
+      final result = await _dataSource.productsid(req, cancelToken: cancelToken);
       return Right(result);
     } catch (e, stackTrace) {
       return Left(failure.handle(e, stackTrace));
     }
   }
+
 }

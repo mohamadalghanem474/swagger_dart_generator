@@ -6,8 +6,5 @@ import 'package:example/data/models/product/responses/productsid_res.dart';
 
 abstract class ProductDataSource {
   Future<ProductsRes> products(ProductsReq req, {CancelToken? cancelToken});
-  Future<ProductsidRes> productsid(
-    ProductsidReq req, {
-    CancelToken? cancelToken,
-  });
+  Future<ProductsidRes> productsid(ProductsidReq req, {CancelToken? cancelToken});
 }

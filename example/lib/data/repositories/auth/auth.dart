@@ -5,8 +5,5 @@ import 'package:example/data/models/auth/requests/authlogin_req.dart';
 import 'package:example/data/models/auth/responses/authlogin_res.dart';
 
 abstract class AuthRepository {
-  Future<Either<Failure, AuthloginRes>> authlogin(
-    AuthloginReq req, {
-    CancelToken? cancelToken,
-  });
+  Future<Either<FailureDetails, AuthloginRes>> authlogin(AuthloginReq req, {CancelToken? cancelToken});
 }

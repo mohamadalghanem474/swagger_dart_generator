@@ -9,18 +9,10 @@ import 'package:example/data/models/product/responses/products_res.dart';
 import 'package:example/data/models/product/responses/productsid_res.dart';
 import 'package:test/test.dart';
 
-class ExampleFailure extends Failure {
-  ExampleFailure(super.message);
-  @override
-  Failure handle(dynamic e, StackTrace stackTrace) {
-    return ExampleFailure("${e.toString()} \n ${stackTrace.toString()}");
-  }
-}
-
 void main() {
   final dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
-  final api = Example.getInstance(dio, ExampleFailure(""));
-  final repo = api.product;
+  final api = Example.init(dio);
+  final repo = api.repository.product;
 
   test('products', () async {
     final req = ProductsReq();
@@ -33,4 +25,5 @@ void main() {
     final result = await repo.productsid(req);
     expect(result.isRight(), true);
   });
+
 }
