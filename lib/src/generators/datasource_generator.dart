@@ -47,13 +47,23 @@ Future<void> generateDatasources(String path, String package, String outputDir) 
     abstractBuffer.writeln('');
     abstractBuffer.writeln('abstract class ${category}DataSource {');
 
-    for (final endpointName in endpoints.keys) {
+    for (final endpointEntry in endpoints.entries) {
+      final endpointName = endpointEntry.key;
+      final endpointData = endpointEntry.value as Map<String, dynamic>;
       final req = '${Utils.toPascalCase(endpointName)}Req';
       final res = '${Utils.toPascalCase(endpointName)}Res';
       final methodName = Utils.toLowerCamelCase(endpointName);
-      abstractBuffer.writeln(
-        '  Future<$res> $methodName($req req, {CancelToken? cancelToken});',
-      );
+      final method = endpointData['method'] as String? ?? 'post';
+
+      if (method == 'delete') {
+        abstractBuffer.writeln(
+          '  Future<$res> $methodName($req req, {CancelToken? cancelToken, Options? options});',
+        );
+      } else {
+        abstractBuffer.writeln(
+          '  Future<$res> $methodName($req req, {CancelToken? cancelToken, void Function(int, int)? onReceiveProgress, Options? options});',
+        );
+      }
     }
 
     abstractBuffer.writeln('}');
@@ -95,9 +105,15 @@ Future<void> generateDatasources(String path, String package, String outputDir) 
       final method = endpointData['method'] as String? ?? 'post';
 
       implBuffer.writeln('  @override');
-      implBuffer.writeln(
-        '  Future<$res> $methodName($req req, {CancelToken? cancelToken}) async {',
-      );
+      if (method == 'delete') {
+        implBuffer.writeln(
+          '  Future<$res> $methodName($req req, {CancelToken? cancelToken, Options? options}) async {',
+        );
+      } else {
+        implBuffer.writeln(
+          '  Future<$res> $methodName($req req, {CancelToken? cancelToken, void Function(int, int)? onReceiveProgress, Options? options}) async {',
+        );
+      }
 
       implBuffer.writeln(
         '    String url = EndPoints.${Utils.toLowerCamelCase(categoryName)}.$methodName;',
@@ -126,8 +142,11 @@ Future<void> generateDatasources(String path, String package, String outputDir) 
           implBuffer.write(', queryParameters: req.query');
         }
       }
-
-      implBuffer.write(', cancelToken: cancelToken');
+      if (method == 'delete') {
+        implBuffer.write(', cancelToken: cancelToken, options: options');
+      } else {
+        implBuffer.write(', cancelToken: cancelToken, onReceiveProgress: onReceiveProgress, options: options');
+      }
       implBuffer.writeln(');');
 
       if (endpointData['response'] is List) {

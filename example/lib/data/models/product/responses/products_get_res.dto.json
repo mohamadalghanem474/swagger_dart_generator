@@ -1,0 +1,11 @@
+[
+  {
+    "productId": 1,
+    "name": "string",
+    "price": 1,
+    "inStock": true,
+    "tags": [
+      "string"
+    ]
+  }
+]

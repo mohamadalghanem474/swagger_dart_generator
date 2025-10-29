@@ -6,17 +6,18 @@ class EndPoints {
 
 class _Auth {
   const _Auth();
-  final String authlogin = "/auth/login";
+  final String loginPost = "/auth/login";
 }
 
 class _User {
   const _User();
-  final String useruserId = "/user/{userId}";
+  final String userGet = "/user/{userId}";
 }
 
 class _Product {
   const _Product();
-  final String products = "/products";
-  final String productsid = "/products/{id}";
+  final String productsGet = "/products";
+  final String productsPost = "/products";
+  final String productsDelete = "/products/{id}";
 }
 

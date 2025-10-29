@@ -1,0 +1,6 @@
+{
+  "body": {
+    "email": "string",
+    "password": "string"
+  }
+}

@@ -9,8 +9,6 @@ export 'src/generators/test_generator.dart';
 import 'dart:io';
 import 'package:swagger_dart_generator/src/generators/api_generator.dart';
 import 'package:swagger_dart_generator/src/generators/failure_generator.dart';
-import 'package:swagger_dart_generator/src/generators/mg_tools_and_build_runner.dart';
-import 'package:swagger_dart_generator/src/generators/pkg_generator.dart';
 import 'package:swagger_dart_generator/src/swagger_parser.dart';
 import 'package:swagger_dart_generator/src/generators/model_generator.dart';
 import 'package:swagger_dart_generator/src/generators/datasource_generator.dart';
@@ -23,7 +21,6 @@ Future<void> generateFromSwagger() async {
   final swaggerJsonPath = '${directory.path}/swagger.json';
   final outputDirectory = '${directory.path}';
   final packageName = directory.path.split(Platform.pathSeparator).last;
-  await generatePkg(swaggerJsonPath, outputDirectory, packageName);
   final tempParsedSwaggerPath = await parseSwaggerFile(swaggerJsonPath, outputDirectory);
   await generateEndpoints(tempParsedSwaggerPath, packageName, outputDirectory);
   await generateModels(tempParsedSwaggerPath, packageName, outputDirectory);
@@ -32,5 +29,11 @@ Future<void> generateFromSwagger() async {
   await generateApi(tempParsedSwaggerPath, packageName, outputDirectory);
   await generateFailureClasses(outputDirectory);
   await generateIntegrationTests(tempParsedSwaggerPath, packageName, outputDirectory);
-  await runMgTools(tempParsedSwaggerPath);
+  print('⏳ Running mg_tools...');
+  final mgToolsResult = await Process.run('dart', ['run', 'mg_tools', '--replace']);
+  if (mgToolsResult.exitCode == 0) {
+    print('🔥 Ready to use! You can now import and use the generated code.\n');
+  } else {
+    print('⚠️  Some issues occurred during generation. Check the logs above.\n');
+  }
 }

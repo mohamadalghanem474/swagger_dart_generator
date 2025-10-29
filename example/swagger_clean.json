@@ -1,0 +1,94 @@
+{
+  "Auth": {
+    "loginPost": {
+      "path": "/auth/login",
+      "method": "post",
+      "query": {},
+      "params": {},
+      "body": {
+        "email": "string",
+        "password": "string"
+      },
+      "response": {
+        "accessToken": "string",
+        "refreshToken": "string",
+        "expiresIn": 1
+      }
+    }
+  },
+  "User": {
+    "userGet": {
+      "path": "/user/{userId}",
+      "method": "get",
+      "query": {
+        "includeDetails": true
+      },
+      "params": {
+        "userId": "string"
+      },
+      "body": null,
+      "response": {
+        "id": "string",
+        "firstName": "string",
+        "lastName": "string",
+        "role": "admin"
+      }
+    }
+  },
+  "Product": {
+    "productsGet": {
+      "path": "/products",
+      "method": "get",
+      "query": {
+        "searchQuery": "string"
+      },
+      "params": {},
+      "body": null,
+      "response": [
+        {
+          "productId": 1,
+          "name": "string",
+          "price": 1,
+          "inStock": true,
+          "tags": [
+            "string"
+          ]
+        }
+      ]
+    },
+    "productsPost": {
+      "path": "/products",
+      "method": "post",
+      "query": {},
+      "params": {},
+      "body": {
+        "productId": 1,
+        "name": "string",
+        "price": 1,
+        "inStock": true,
+        "tags": [
+          "string"
+        ]
+      },
+      "response": {
+        "productId": 1,
+        "name": "string",
+        "price": 1,
+        "inStock": true,
+        "tags": [
+          "string"
+        ]
+      }
+    },
+    "productsDelete": {
+      "path": "/products/{id}",
+      "method": "delete",
+      "query": {},
+      "params": {
+        "id": 1
+      },
+      "body": null,
+      "response": null
+    }
+  }
+}

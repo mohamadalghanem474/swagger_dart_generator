@@ -14,10 +14,10 @@ dependencies:
   # path: ^1.9.0
 
 dev_dependencies:
-  build_runner: ^2.9.0
+  build_runner: ^2.10.1
   flutter_lints: ^6.0.0
   freezed: ^3.2.3
   json_serializable: ^6.11.1
   lints: ^6.0.0
-  mg_tools: ^1.0.13
+  mg_tools: ^1.0.17
   test: ^1.25.6

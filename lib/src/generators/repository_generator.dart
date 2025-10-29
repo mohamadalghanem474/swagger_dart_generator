@@ -52,13 +52,22 @@ Future<void> generateRepositories(String path, String package, String outputDir)
     abstractBuffer.writeln('');
     abstractBuffer.writeln('abstract class ${category}Repository {');
 
-    for (final endpointName in endpoints.keys) {
+    for (final endpointEntry in endpoints.entries) {
+      final endpointName = endpointEntry.key;
+      final endpointData = endpointEntry.value as Map<String, dynamic>;
+      final method = endpointData['method'] as String? ?? 'post';
       final req = '${Utils.toPascalCase(endpointName)}Req';
       final res = '${Utils.toPascalCase(endpointName)}Res';
       final methodName = Utils.toLowerCamelCase(endpointName);
-      abstractBuffer.writeln(
-        '  Future<Either<FailureDetails, $res>> $methodName($req req, {CancelToken? cancelToken});',
-      );
+      if (method == 'delete') {
+        abstractBuffer.writeln(
+          '  Future<Either<FailureDetails, $res>> $methodName($req req, {CancelToken? cancelToken, Options? options});',
+        );
+      } else {
+        abstractBuffer.writeln(
+          '  Future<Either<FailureDetails, $res>> $methodName($req req, {CancelToken? cancelToken, void Function(int, int)? onReceiveProgress, Options? options});',
+        );
+      }
     }
 
     abstractBuffer.writeln('}');
@@ -96,19 +105,35 @@ Future<void> generateRepositories(String path, String package, String outputDir)
     implBuffer.writeln('  final ${category}DataSource _dataSource;\n');
     implBuffer.writeln('  ${category}RepositoryImpl(this._dataSource, this.failure);\n');
 
-    for (final endpointName in endpoints.keys) {
+    for (final endpointEntry in endpoints.entries) {
+      final endpointName = endpointEntry.key;
+      final endpointData = endpointEntry.value as Map<String, dynamic>;
+      final method = endpointData['method'] as String? ?? 'post';
       final req = '${Utils.toPascalCase(endpointName)}Req';
       final res = '${Utils.toPascalCase(endpointName)}Res';
       final methodName = Utils.toLowerCamelCase(endpointName);
-
       implBuffer.writeln('  @override');
-      implBuffer.writeln(
-        '  Future<Either<FailureDetails, $res>> $methodName($req req, {CancelToken? cancelToken}) async {',
-      );
+      if (method == 'delete') {
+        implBuffer.writeln(
+          '  Future<Either<FailureDetails, $res>> $methodName($req req, {CancelToken? cancelToken, Options? options}) async {',
+        );
+      } else {
+        implBuffer.writeln(
+          '  Future<Either<FailureDetails, $res>> $methodName($req req, {CancelToken? cancelToken, void Function(int, int)? onReceiveProgress, Options? options}) async {',
+        );
+      }
+
       implBuffer.writeln('    try {');
-      implBuffer.writeln(
-        '      final result = await _dataSource.$methodName(req, cancelToken: cancelToken);',
-      );
+      if (method == 'delete') {
+        implBuffer.writeln(
+          '      final result = await _dataSource.$methodName(req, cancelToken: cancelToken, options: options);',
+        );
+      } else {
+        implBuffer.writeln(
+          '      final result = await _dataSource.$methodName(req, cancelToken: cancelToken, onReceiveProgress: onReceiveProgress, options: options);',
+        );
+      }
+
       implBuffer.writeln('      return Right(result);');
       implBuffer.writeln('    } catch (e, stackTrace) {');
       implBuffer.writeln('      return Left(failure.handle(e, stackTrace));');
