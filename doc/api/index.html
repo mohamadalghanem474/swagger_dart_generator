@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="swagger_dart_generator API docs, for the Dart programming language.">
+  <title>swagger_dart_generator - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/mohamadalghanem474/swagger_dart_generator">swagger_dart_generator package</a></li>
+  </ol>
+  <div class="self-name">swagger_dart_generator</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="-swagger-dart-generator">🧬 Swagger Dart Generator</h1>
+<p><a href="https://pub.dev/packages/swagger_dart_generator"><img src="https://img.shields.io/pub/v/swagger_dart_generator.svg" alt="Pub Version"></a>
+<img src="https://img.shields.io/badge/null_safety-%E2%9C%85-green" alt="Null Safety">
+<a href="https://github.com/mohamadalghanem474/swagger_dart_generator"><img src="https://img.shields.io/github/stars/mohamadalghanem474/swagger_dart_generator?style=social" alt="GitHub Stars"></a></p>
+<p>You run the generator once and you instantly get a package you can import in any Flutter / Dart project to call your backend.</p>
+<h2 id="-installation">💻 Installation</h2>
+<pre class="language-bash"><code class="language-bash">dart pub global activate swagger_dart_generator
+</code></pre>
+<h2 id="usage">Usage</h2>
+<h3 id="run-the-command-with-the-path-to-your-swaggerjson-the-tool-will-generate-a-dart-package-structure">Run the command with the path to your <code>swagger.json</code>. The tool will generate a Dart package structure</h3>
+<pre class="language-bash"><code class="language-bash">swagger_dart_generator
+</code></pre>
+<h3 id="import-and-use-in-your-app">Import and use in your app</h3>
+<pre class="language-yaml"><code class="language-yaml">dependencies:
+  example:
+    path: example
+    version: 1.0.0
+</code></pre>
+<pre class="language-dart"><code class="language-dart">import 'package:dio/dio.dart';
+import 'package:example/example.dart';
+import 'package:example/data/models/auth/requests/authlogin_req.dart';
+
+void main() async {
+  final dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
+  final api = Example.init(dio);
+  final loginResult = await api.repository.auth.authlogin(AuthloginReq());
+  loginResult.fold(
+    (failure) =&gt; print('❌ ${failure.message}'),
+    (success) =&gt; print('✅ Logged in: $success'),
+  );
+}
+</code></pre>
+<h2 id="-generated-files-structure">📂 Generated Files Structure</h2>
+<h3 id="datasource-abstract"><strong>DataSource</strong> Abstract</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:dio/dio.dart';
+import 'package:example/data/models/auth/requests/login_post_req.dart';
+import 'package:example/data/models/auth/responses/login_post_res.dart';
+
+abstract class AuthDataSource {
+  Future&lt;LoginPostRes&gt; loginPost(LoginPostReq req, {CancelToken? cancelToken, void Function(int, int)? onReceiveProgress, Options? options});
+}
+</code></pre>
+<h3 id="datasource-implementation"><strong>DataSource</strong> Implementation</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:dio/dio.dart';
+import 'package:example/data/datasources/auth/auth.dart';
+import 'package:example/data/models/auth/requests/login_post_req.dart';
+import 'package:example/data/models/auth/responses/login_post_res.dart';
+import 'package:example/end_points.dart';
+
+class AuthRemoteDataSourceImpl implements AuthDataSource {
+  final Dio _dio;
+  AuthRemoteDataSourceImpl(this._dio);
+
+  @override
+  Future&lt;LoginPostRes&gt; loginPost(LoginPostReq req, {CancelToken? cancelToken, void Function(int, int)? onReceiveProgress, Options? options}) async {
+    String url = EndPoints.auth.loginPost;
+    final result = await _dio.post(url, data: req.body?.toJson(), cancelToken: cancelToken, onReceiveProgress: onReceiveProgress, options: options);
+    return LoginPostRes.fromJson(result.data);
+  }
+}
+
+</code></pre>
+<h3 id="model-request"><strong>Model</strong> Request</h3>
+<pre class="language-json"><code class="language-json">{
+  "body": {
+    "email": "string",
+    "password": "string"
+  }
+}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">// ignore_for_file: invalid_annotation_target
+
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'dart:convert';
+
+part 'login_post_req.freezed.dart';
+part 'login_post_req.g.dart';
+
+LoginPostReq loginPostReqFromJsonString(String str) =&gt; LoginPostReq.fromJson(json.decode(str));
+
+String loginPostReqToJsonString(LoginPostReq data) =&gt; json.encode(data.toJson());
+
+@freezed
+abstract class LoginPostReq with _$LoginPostReq {
+  const factory LoginPostReq({
+    @JsonKey(name: "body", includeIfNull: false) LoginPostReqBody? body,
+}) = _LoginPostReq;
+
+  factory LoginPostReq.fromJson(Map&lt;String, dynamic&gt; json) =&gt; _$LoginPostReqFromJson(json);
+}
+
+
+LoginPostReqBody loginPostReqBodyFromJsonString(String str) =&gt; LoginPostReqBody.fromJson(json.decode(str));
+
+String loginPostReqBodyToJsonString(LoginPostReqBody data) =&gt; json.encode(data.toJson());
+
+@freezed
+abstract class LoginPostReqBody with _$LoginPostReqBody {
+  const factory LoginPostReqBody({
+    @JsonKey(name: "email", includeIfNull: false) String? email,
+    @JsonKey(name: "password", includeIfNull: false) String? password,
+}) = _LoginPostReqBody;
+
+  factory LoginPostReqBody.fromJson(Map&lt;String, dynamic&gt; json) =&gt; _$LoginPostReqBodyFromJson(json);
+}
+</code></pre>
+<h3 id="model-response"><strong>Model</strong> Response</h3>
+<pre class="language-json"><code class="language-json">{
+  "accessToken": "string",
+  "refreshToken": "string",
+  "expiresIn": 1
+}
+</code></pre>
+<pre class="language-dart"><code class="language-dart">// ignore_for_file: invalid_annotation_target
+
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'dart:convert';
+
+part 'login_post_res.freezed.dart';
+part 'login_post_res.g.dart';
+
+LoginPostRes loginPostResFromJsonString(String str) =&gt; LoginPostRes.fromJson(json.decode(str));
+
+String loginPostResToJsonString(LoginPostRes data) =&gt; json.encode(data.toJson());
+
+@freezed
+abstract class LoginPostRes with _$LoginPostRes {
+  const factory LoginPostRes({
+    @JsonKey(name: "accessToken", includeIfNull: false) String? accessToken,
+    @JsonKey(name: "refreshToken", includeIfNull: false) String? refreshToken,
+    @JsonKey(name: "expiresIn", includeIfNull: false) int? expiresIn,
+}) = _LoginPostRes;
+
+  factory LoginPostRes.fromJson(Map&lt;String, dynamic&gt; json) =&gt; _$LoginPostResFromJson(json);
+}
+</code></pre>
+<h3 id="repository-abstract"><strong>Repository</strong> Abstract</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
+import 'package:example/failure.dart';
+import 'package:example/data/models/auth/requests/login_post_req.dart';
+import 'package:example/data/models/auth/responses/login_post_res.dart';
+
+abstract class AuthRepository {
+  Future&lt;Either&lt;FailureDetails, LoginPostRes&gt;&gt; loginPost(LoginPostReq req, {CancelToken? cancelToken, void Function(int, int)? onReceiveProgress, Options? options});
+}
+</code></pre>
+<h3 id="repository-implementation"><strong>Repository</strong> Implementation</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:example/failure.dart';
+import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
+import 'package:example/data/repositories/auth/auth.dart';
+import 'package:example/data/datasources/auth/auth.dart';
+import 'package:example/data/models/auth/requests/login_post_req.dart';
+import 'package:example/data/models/auth/responses/login_post_res.dart';
+
+class AuthRepositoryImpl implements AuthRepository {
+  final Failure failure;
+  final AuthDataSource _dataSource;
+
+  AuthRepositoryImpl(this._dataSource, this.failure);
+
+  @override
+  Future&lt;Either&lt;FailureDetails, LoginPostRes&gt;&gt; loginPost(LoginPostReq req, {CancelToken? cancelToken, void Function(int, int)? onReceiveProgress, Options? options}) async {
+    try {
+      final result = await _dataSource.loginPost(req, cancelToken: cancelToken, onReceiveProgress: onReceiveProgress, options: options);
+      return Right(result);
+    } catch (e, stackTrace) {
+      return Left(failure.handle(e, stackTrace));
+    }
+  }
+
+}
+</code></pre>
+<h3 id="endpoints"><strong>EndPoints</strong></h3>
+<pre class="language-dart"><code class="language-dart">class EndPoints {
+  static const auth = _Auth();
+  static const user = _User();
+  static const product = _Product();
+}
+
+class _Auth {
+  const _Auth();
+  final String loginPost = "/auth/login";
+}
+
+class _User {
+  const _User();
+  final String userGet = "/user/{userId}";
+}
+
+class _Product {
+  const _Product();
+  final String productsGet = "/products";
+  final String productsPost = "/products";
+  final String productsDelete = "/products/{id}";
+}
+</code></pre>
+<h3 id="failure"><strong>Failure</strong></h3>
+<pre class="language-dart"><code class="language-dart">abstract class Failure {
+  const Failure();
+  FailureDetails handle(dynamic e, StackTrace stackTrace);
+}
+
+class DefaultFailure extends Failure {
+  const DefaultFailure();
+  @override
+  FailureDetails handle(dynamic e, StackTrace stackTrace) {
+    return FailureDetails(message: e.toString(), stackTrace: stackTrace);
+  }
+}
+
+class FailureDetails {
+  final String message;
+  final StackTrace stackTrace;
+  final bool show;
+  final Object? extra;
+  const FailureDetails({required this.message, required this.stackTrace, this.show = true, this.extra});
+}
+</code></pre>
+<h2 id="-contributing">🤝 Contributing</h2>
+<p>Pull requests, issues and feature‑requests are welcome!<br>
+If you find bugs or want to support new features (e.g., caching, plugin support) open an issue.</p>
+<h2 id="-license">📄 License</h2>
+<p>MIT © 2025 Mohamad Alghanem</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="swagger_dart_generator">
+  <span class="name"><a href="swagger_dart_generator/">swagger_dart_generator</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/mohamadalghanem474/swagger_dart_generator">swagger_dart_generator package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">swagger_dart_generator</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="swagger_dart_generator/">swagger_dart_generator</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    swagger_dart_generator
+      1.2.1
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

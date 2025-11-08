@@ -7,3 +7,7 @@
 - Add Qustion [Yes/No] in Re Create package
 - Add http method Name for all methods
 - Add Dio `Options`  And `onReceiveProgress` as Optinal in flow
+
+## 1.2.1
+
+- Update README.md

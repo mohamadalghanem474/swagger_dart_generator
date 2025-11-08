@@ -6,20 +6,7 @@
 
 You run the generator once and you instantly get a package you can import in any Flutter / Dart project to call your backend.
 
----
-
-## ✨ Features
-
-* **Clean Architecture:** Generates the data layer components (DataSources, Repositories, Models) for maintainability.
-* **Singleton Pattern:** Creates a central (`<package_name>.dart`) using lazy singletons access to all generated, You can Custom this just not use `<package_name>`.init().
-* **Model Generation:** Creates Dart classes for API **Request** and **Response** models You can update only dtos With `mg_tools` for gen Freezed DTOs from json.
-* **Testing:** Generates ready-to-use **Integration Tests** for all endpoints With Singletons default.
-
----
-
 ## 💻 Installation
-
-Install the package globally using the Dart package manager. This makes the `swagger_dart_generator` command available anywhere on your system.
 
 ```bash
 dart pub global activate swagger_dart_generator
@@ -27,19 +14,22 @@ dart pub global activate swagger_dart_generator
 
 ## Usage
 
-Run the command with the path to your `swagger.json`. The tool will generate a Dart package structure.
+### Run the command with the path to your `swagger.json`. The tool will generate a Dart package structure
 
 ```bash
 swagger_dart_generator
 ```
 
----
+### Import and use in your app
 
-## 🚀 Working with the Generated Package
+```yaml
+dependencies:
+  example:
+    path: example
+    version: 1.0.0
+```
 
-Import and use in your app:
-
-   ```dart
+```dart
 import 'package:dio/dio.dart';
 import 'package:example/example.dart';
 import 'package:example/data/models/auth/requests/authlogin_req.dart';
@@ -55,129 +45,227 @@ void main() async {
 }
 ```
 
----
+## 📂 Generated Files Structure
 
-## 🧰 Dependencies Generated
+### **DataSource** Abstract
 
-```yaml
-dependencies:
-  dio:
-  dartz:
-  freezed_annotation:
-  json_annotation:
-  get_it:
-  logger:
+```dart
+import 'package:dio/dio.dart';
+import 'package:example/data/models/auth/requests/login_post_req.dart';
+import 'package:example/data/models/auth/responses/login_post_res.dart';
 
-dev_dependencies:
-  build_runner:
-  freezed:
-  json_serializable:
-  mg_tools:
-  test:
+abstract class AuthDataSource {
+  Future<LoginPostRes> loginPost(LoginPostReq req, {CancelToken? cancelToken, void Function(int, int)? onReceiveProgress, Options? options});
+}
 ```
 
----
+### **DataSource** Implementation
 
-## 📂 Folder Structure Generated
+```dart
+import 'package:dio/dio.dart';
+import 'package:example/data/datasources/auth/auth.dart';
+import 'package:example/data/models/auth/requests/login_post_req.dart';
+import 'package:example/data/models/auth/responses/login_post_res.dart';
+import 'package:example/end_points.dart';
 
-```text
-example
- ┣ .dart_tool
- ┃ ┣ pub
- ┃ ┃ ┗ bin
- ┃ ┃ ┃ ┗ mg_tools
- ┃ ┃ ┃ ┃ ┗ mg_tools.dart-3.9.2.snapshot
- ┃ ┣ package_config.json
- ┃ ┗ package_graph.json
- ┣ lib
- ┃ ┣ data
- ┃ ┃ ┣ datasources
- ┃ ┃ ┃ ┣ auth
- ┃ ┃ ┃ ┃ ┣ auth.dart
- ┃ ┃ ┃ ┃ ┗ auth_remote_datasource_impl.dart
- ┃ ┃ ┃ ┣ product
- ┃ ┃ ┃ ┃ ┣ product.dart
- ┃ ┃ ┃ ┃ ┗ product_remote_datasource_impl.dart
- ┃ ┃ ┃ ┗ user
- ┃ ┃ ┃ ┃ ┣ user.dart
- ┃ ┃ ┃ ┃ ┗ user_remote_datasource_impl.dart
- ┃ ┃ ┣ models
- ┃ ┃ ┃ ┣ auth
- ┃ ┃ ┃ ┃ ┣ requests
- ┃ ┃ ┃ ┃ ┃ ┣ auth_
- ┃ ┃ ┃ ┃ ┃ ┣ authlogin_req.dart
- ┃ ┃ ┃ ┃ ┃ ┣ authlogin_req.dto.json
- ┃ ┃ ┃ ┃ ┃ ┣ authlogin_req.freezed.dart
- ┃ ┃ ┃ ┃ ┃ ┗ authlogin_req.g.dart
- ┃ ┃ ┃ ┃ ┗ responses
- ┃ ┃ ┃ ┃ ┃ ┣ authlogin_res.dart
- ┃ ┃ ┃ ┃ ┃ ┣ authlogin_res.dto.json
- ┃ ┃ ┃ ┃ ┃ ┣ authlogin_res.freezed.dart
- ┃ ┃ ┃ ┃ ┃ ┗ authlogin_res.g.dart
- ┃ ┃ ┃ ┣ product
- ┃ ┃ ┃ ┃ ┣ requests
- ┃ ┃ ┃ ┃ ┃ ┣ products_req.dart
- ┃ ┃ ┃ ┃ ┃ ┣ products_req.dto.json
- ┃ ┃ ┃ ┃ ┃ ┣ products_req.freezed.dart
- ┃ ┃ ┃ ┃ ┃ ┣ products_req.g.dart
- ┃ ┃ ┃ ┃ ┃ ┣ productsid_req.dart
- ┃ ┃ ┃ ┃ ┃ ┣ productsid_req.dto.json
- ┃ ┃ ┃ ┃ ┃ ┣ productsid_req.freezed.dart
- ┃ ┃ ┃ ┃ ┃ ┗ productsid_req.g.dart
- ┃ ┃ ┃ ┃ ┗ responses
- ┃ ┃ ┃ ┃ ┃ ┣ products_res.dart
- ┃ ┃ ┃ ┃ ┃ ┣ products_res.dto.json
- ┃ ┃ ┃ ┃ ┃ ┣ products_res.freezed.dart
- ┃ ┃ ┃ ┃ ┃ ┣ products_res.g.dart
- ┃ ┃ ┃ ┃ ┃ ┣ productsid_res.dart
- ┃ ┃ ┃ ┃ ┃ ┣ productsid_res.dto.json
- ┃ ┃ ┃ ┃ ┃ ┣ productsid_res.freezed.dart
- ┃ ┃ ┃ ┃ ┃ ┗ productsid_res.g.dart
- ┃ ┃ ┃ ┗ user
- ┃ ┃ ┃ ┃ ┣ requests
- ┃ ┃ ┃ ┃ ┃ ┣ useruser_id_req.dart
- ┃ ┃ ┃ ┃ ┃ ┣ useruser_id_req.dto.json
- ┃ ┃ ┃ ┃ ┃ ┣ useruser_id_req.freezed.dart
- ┃ ┃ ┃ ┃ ┃ ┗ useruser_id_req.g.dart
- ┃ ┃ ┃ ┃ ┗ responses
- ┃ ┃ ┃ ┃ ┃ ┣ useruser_id_res.dart
- ┃ ┃ ┃ ┃ ┃ ┣ useruser_id_res.dto.json
- ┃ ┃ ┃ ┃ ┃ ┣ useruser_id_res.freezed.dart
- ┃ ┃ ┃ ┃ ┃ ┗ useruser_id_res.g.dart
- ┃ ┃ ┗ repositories
- ┃ ┃ ┃ ┣ auth
- ┃ ┃ ┃ ┃ ┣ auth.dart
- ┃ ┃ ┃ ┃ ┗ auth_repository_impl.dart
- ┃ ┃ ┃ ┣ product
- ┃ ┃ ┃ ┃ ┣ product.dart
- ┃ ┃ ┃ ┃ ┗ product_repository_impl.dart
- ┃ ┃ ┃ ┗ user
- ┃ ┃ ┃ ┃ ┣ user.dart
- ┃ ┃ ┃ ┃ ┗ user_repository_impl.dart
- ┃ ┣ end_points.dart
- ┃ ┣ example.dart
- ┃ ┗ failure.dart
- ┣ test
- ┃ ┣ auth_test.dart
- ┃ ┣ product_test.dart
- ┃ ┗ user_test.dart
- ┣ .gitignore
- ┣ CHANGELOG.md
- ┣ README.md
- ┣ analysis_options.yaml
- ┣ pubspec.lock
- ┣ pubspec.yaml
- ┗ swagger.json
+class AuthRemoteDataSourceImpl implements AuthDataSource {
+  final Dio _dio;
+  AuthRemoteDataSourceImpl(this._dio);
+
+  @override
+  Future<LoginPostRes> loginPost(LoginPostReq req, {CancelToken? cancelToken, void Function(int, int)? onReceiveProgress, Options? options}) async {
+    String url = EndPoints.auth.loginPost;
+    final result = await _dio.post(url, data: req.body?.toJson(), cancelToken: cancelToken, onReceiveProgress: onReceiveProgress, options: options);
+    return LoginPostRes.fromJson(result.data);
+  }
+}
+
 ```
 
----
+### **Model** Request
+
+```json
+{
+  "body": {
+    "email": "string",
+    "password": "string"
+  }
+}
+```
+
+```dart
+// ignore_for_file: invalid_annotation_target
+
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'dart:convert';
+
+part 'login_post_req.freezed.dart';
+part 'login_post_req.g.dart';
+
+LoginPostReq loginPostReqFromJsonString(String str) => LoginPostReq.fromJson(json.decode(str));
+
+String loginPostReqToJsonString(LoginPostReq data) => json.encode(data.toJson());
+
+@freezed
+abstract class LoginPostReq with _$LoginPostReq {
+  const factory LoginPostReq({
+    @JsonKey(name: "body", includeIfNull: false) LoginPostReqBody? body,
+}) = _LoginPostReq;
+
+  factory LoginPostReq.fromJson(Map<String, dynamic> json) => _$LoginPostReqFromJson(json);
+}
+
+
+LoginPostReqBody loginPostReqBodyFromJsonString(String str) => LoginPostReqBody.fromJson(json.decode(str));
+
+String loginPostReqBodyToJsonString(LoginPostReqBody data) => json.encode(data.toJson());
+
+@freezed
+abstract class LoginPostReqBody with _$LoginPostReqBody {
+  const factory LoginPostReqBody({
+    @JsonKey(name: "email", includeIfNull: false) String? email,
+    @JsonKey(name: "password", includeIfNull: false) String? password,
+}) = _LoginPostReqBody;
+
+  factory LoginPostReqBody.fromJson(Map<String, dynamic> json) => _$LoginPostReqBodyFromJson(json);
+}
+```
+
+### **Model** Response
+
+```json
+{
+  "accessToken": "string",
+  "refreshToken": "string",
+  "expiresIn": 1
+}
+```
+
+```dart
+// ignore_for_file: invalid_annotation_target
+
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'dart:convert';
+
+part 'login_post_res.freezed.dart';
+part 'login_post_res.g.dart';
+
+LoginPostRes loginPostResFromJsonString(String str) => LoginPostRes.fromJson(json.decode(str));
+
+String loginPostResToJsonString(LoginPostRes data) => json.encode(data.toJson());
+
+@freezed
+abstract class LoginPostRes with _$LoginPostRes {
+  const factory LoginPostRes({
+    @JsonKey(name: "accessToken", includeIfNull: false) String? accessToken,
+    @JsonKey(name: "refreshToken", includeIfNull: false) String? refreshToken,
+    @JsonKey(name: "expiresIn", includeIfNull: false) int? expiresIn,
+}) = _LoginPostRes;
+
+  factory LoginPostRes.fromJson(Map<String, dynamic> json) => _$LoginPostResFromJson(json);
+}
+```
+
+### **Repository** Abstract
+
+```dart
+import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
+import 'package:example/failure.dart';
+import 'package:example/data/models/auth/requests/login_post_req.dart';
+import 'package:example/data/models/auth/responses/login_post_res.dart';
+
+abstract class AuthRepository {
+  Future<Either<FailureDetails, LoginPostRes>> loginPost(LoginPostReq req, {CancelToken? cancelToken, void Function(int, int)? onReceiveProgress, Options? options});
+}
+```
+
+### **Repository** Implementation
+
+```dart
+import 'package:example/failure.dart';
+import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
+import 'package:example/data/repositories/auth/auth.dart';
+import 'package:example/data/datasources/auth/auth.dart';
+import 'package:example/data/models/auth/requests/login_post_req.dart';
+import 'package:example/data/models/auth/responses/login_post_res.dart';
+
+class AuthRepositoryImpl implements AuthRepository {
+  final Failure failure;
+  final AuthDataSource _dataSource;
+
+  AuthRepositoryImpl(this._dataSource, this.failure);
+
+  @override
+  Future<Either<FailureDetails, LoginPostRes>> loginPost(LoginPostReq req, {CancelToken? cancelToken, void Function(int, int)? onReceiveProgress, Options? options}) async {
+    try {
+      final result = await _dataSource.loginPost(req, cancelToken: cancelToken, onReceiveProgress: onReceiveProgress, options: options);
+      return Right(result);
+    } catch (e, stackTrace) {
+      return Left(failure.handle(e, stackTrace));
+    }
+  }
+
+}
+```
+
+### **EndPoints**
+
+```dart
+class EndPoints {
+  static const auth = _Auth();
+  static const user = _User();
+  static const product = _Product();
+}
+
+class _Auth {
+  const _Auth();
+  final String loginPost = "/auth/login";
+}
+
+class _User {
+  const _User();
+  final String userGet = "/user/{userId}";
+}
+
+class _Product {
+  const _Product();
+  final String productsGet = "/products";
+  final String productsPost = "/products";
+  final String productsDelete = "/products/{id}";
+}
+```
+
+### **Failure**
+
+```dart
+abstract class Failure {
+  const Failure();
+  FailureDetails handle(dynamic e, StackTrace stackTrace);
+}
+
+class DefaultFailure extends Failure {
+  const DefaultFailure();
+  @override
+  FailureDetails handle(dynamic e, StackTrace stackTrace) {
+    return FailureDetails(message: e.toString(), stackTrace: stackTrace);
+  }
+}
+
+class FailureDetails {
+  final String message;
+  final StackTrace stackTrace;
+  final bool show;
+  final Object? extra;
+  const FailureDetails({required this.message, required this.stackTrace, this.show = true, this.extra});
+}
+```
 
 ## 🤝 Contributing
 
 Pull requests, issues and feature‑requests are welcome!  
-If you find bugs or want to support new features (e.g., custom headers, caching, plugin support) open an issue.
-
----
+If you find bugs or want to support new features (e.g., caching, plugin support) open an issue.
 
 ## 📄 License
 

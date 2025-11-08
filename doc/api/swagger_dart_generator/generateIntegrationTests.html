@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the generateIntegrationTests function from the swagger_dart_generator library, for the Dart programming language.">
+  <title>generateIntegrationTests function - swagger_dart_generator library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">swagger_dart_generator</a></li>
+    <li><a href="../swagger_dart_generator/">swagger_dart_generator.dart</a></li>
+    <li class="self-crumb">generateIntegrationTests function</li>
+  </ol>
+  <div class="self-name">generateIntegrationTests</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="swagger_dart_generator&#47;swagger_dart_generator-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">generateIntegrationTests</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.dart.dev/stable/3.9.2/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+<span class="name ">generateIntegrationTests</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="generateIntegrationTests-param-path"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">path</span>, </span></li>
+<li><span class="parameter" id="generateIntegrationTests-param-package"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">package</span>, </span></li>
+<li><span class="parameter" id="generateIntegrationTests-param-outputDir"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">outputDir</span></span></li>
+</ol>)
+
+        
+
+    </section>
+    
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;void&gt; generateIntegrationTests(String path, String package, String outputDir) async {
+  final file = File(path);
+  if (!file.existsSync()) {
+    print(&#39;❌ $path not found!&#39;);
+    return;
+  }
+
+  final jsonStr = await file.readAsString();
+  final map = json.decode(jsonStr) as Map&lt;String, dynamic&gt;;
+  final baseDir = Directory(&#39;$outputDir&#47;test&#39;);
+  baseDir.createSync(recursive: true);
+  for (final categoryEntry in map.entries) {
+    final category = categoryEntry.key;
+    final endpoints = categoryEntry.value as Map&lt;String, dynamic&gt;;
+    final categoryName = Utils.toSnakeCase(category);
+    final categoryRepositoryCamel = Utils.toLowerCamelCase(category);
+    final testFile = File(&#39;${baseDir.path}&#47;${categoryName}_test.dart&#39;);
+
+    final buffer = StringBuffer();
+    buffer.writeln(&quot;&#47;&#47; ignore_for_file: unused_import, prefer_const_constructors&quot;);
+    buffer.writeln(&quot;import &#39;package:dartz&#47;dartz.dart&#39;;&quot;);
+    buffer.writeln(&quot;import &#39;package:dio&#47;dio.dart&#39;;&quot;);
+    buffer.writeln(&quot;import &#39;package:$package&#47;failure.dart&#39;;&quot;);
+    buffer.writeln(&quot;import &#39;package:$package&#47;$package.dart&#39;;&quot;);
+    for (final endpointName in endpoints.keys) {
+      final snakeName = Utils.toSnakeCase(endpointName);
+      buffer.writeln(&quot;import &#39;package:$package&#47;data&#47;models&#47;$categoryName&#47;requests&#47;${snakeName}_req.dart&#39;;&quot;);
+    }
+    for (final endpointName in endpoints.keys) {
+      final snakeName = Utils.toSnakeCase(endpointName);
+      buffer.writeln(&quot;import &#39;package:$package&#47;data&#47;models&#47;$categoryName&#47;responses&#47;${snakeName}_res.dart&#39;;&quot;);
+    }
+    buffer.writeln(&quot;import &#39;package:test&#47;test.dart&#39;;&quot;);
+    buffer.writeln(&#39;&#39;);
+    buffer.writeln(&#39;void main() {&#39;);
+    buffer.writeln(&quot;  final dio = Dio(BaseOptions(baseUrl: &#39;https:&#47;&#47;api.$package.com&#39;));&quot;);
+    buffer.writeln(&quot;  final api = ${Utils.toPascalCase(package)}.init(dio);&quot;);
+    buffer.writeln(&quot;  final repo = api.repository.$categoryRepositoryCamel;&quot;);
+    buffer.writeln(&#39;&#39;);
+    for (final endpointName in endpoints.keys) {
+      final method = Utils.toLowerCamelCase(endpointName);
+      final reqClass = &#39;${Utils.toPascalCase(endpointName)}Req&#39;;
+      buffer.writeln(&#39;  test(\&#39;$endpointName\&#39;, () async {&#39;);
+      buffer.writeln(&#39;    final req = $reqClass();&#39;);
+      buffer.writeln(&#39;    final result = await repo.$method(req);&#39;);
+      buffer.writeln(&#39;    expect(result.isRight(), true);&#39;);
+      buffer.writeln(&#39;  });\n&#39;);
+    }
+    buffer.writeln(&#39;}&#39;);
+    await testFile.writeAsString(buffer.toString());
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">swagger_dart_generator</a></li>
+    <li><a href="../swagger_dart_generator/">swagger_dart_generator</a></li>
+    <li class="self-crumb">generateIntegrationTests function</li>
+</ol>
+
+    <h5>swagger_dart_generator library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    swagger_dart_generator
+      1.2.1
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+
