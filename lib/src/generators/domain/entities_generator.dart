@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
 import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
-import 'package:swagger_dart_generator/src/generators/models/builders/class_builder.dart';
+import 'package:swagger_dart_generator/src/generators/models/builders/entity_builder.dart';
 import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 
 /// Generates domain entities.
@@ -71,10 +71,9 @@ class EntitiesGenerator {
         ? _extractProperties(endpoint.responseBody!)
         : <String, dynamic>{};
 
-    final builder = ClassBuilder(
+    final builder = EntityBuilder(
       className: className,
       properties: properties,
-      useEquatable: true,
     );
 
     final file = File('${outputDir.path}/$fileName');

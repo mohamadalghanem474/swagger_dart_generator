@@ -279,14 +279,9 @@ class RepositoryImplGenerator {
     statements.add(Code('try {'));
     if (endpoint.hasResponseBody) {
       statements.add(Code('  final result = await $fullCall;'));
-      // For clean architecture: map response model to domain entity
-      // For simple architecture: return response model directly
-      if (architectureStyle == ArchitectureStyle.simple) {
-        statements.add(Code('  return Right(result);'));
-      } else {
-        statements.add(Code('  final entity = ${endpoint.entityClassName}.fromJson(result.toJson());'));
-        statements.add(Code('  return Right(entity);'));
-      }
+      // Return result directly - for clean arch, result (Response) extends Entity
+      // For simple architecture, result is the Response model
+      statements.add(Code('  return Right(result);'));
     } else {
       statements.add(Code('  await $fullCall;'));
       statements.add(Code('  return const Right(null);'));

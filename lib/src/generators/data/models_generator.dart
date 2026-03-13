@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
 import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
-import 'package:swagger_dart_generator/src/generators/models/builders/class_builder.dart';
+import 'package:swagger_dart_generator/src/generators/models/builders/model_builder.dart';
 import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 
 /// Generates data models with barrel exports.
@@ -69,7 +69,7 @@ class ModelsGenerator {
 
       // Generate response model
       if (endpoint.hasResponseBody) {
-        await _generateResponseModel(endpoint, responsesDir, filePrefix: filePrefix);
+        await _generateResponseModel(endpoint, responsesDir, featureName, filePrefix: filePrefix);
         responseExports.add("export 'responses/${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_res.dart';");
       }
     }
@@ -113,10 +113,10 @@ class ModelsGenerator {
       properties[fieldName] = _getDefaultValueForType(param.type);
     }
 
-    final builder = ClassBuilder(
+    // Request models need toJson for serialization
+    final builder = ModelBuilder(
       className: className,
       properties: properties,
-      useEquatable: true,
     );
 
     final file = File('${outputDir.path}/$fileName');
@@ -145,10 +145,10 @@ class ModelsGenerator {
 
     if (properties.isEmpty) return;
 
-    final builder = ClassBuilder(
+    // Request models need toJson for serialization
+    final builder = ModelBuilder(
       className: className,
       properties: properties,
-      useEquatable: true,
     );
 
     final file = File('${outputDir.path}/$fileName');
@@ -157,7 +157,8 @@ class ModelsGenerator {
 
   Future<void> _generateResponseModel(
     EndpointModel endpoint,
-    Directory outputDir, {
+    Directory outputDir, 
+    String featureName, {
     String filePrefix = '',
   }) async {
     final className = endpoint.responseClassName;
@@ -167,14 +168,44 @@ class ModelsGenerator {
         ? _flattenProperties(endpoint.responseBody!)
         : <String, dynamic>{};
 
-    final builder = ClassBuilder(
-      className: className,
-      properties: properties,
-      useEquatable: true,
-    );
+    // For simple architecture, response models are standalone (no entity layer)
+    // For feature-first and layer-first, response models extend Entity
+    if (architectureStyle == ArchitectureStyle.simple) {
+      final builder = ModelBuilder(
+        className: className,
+        properties: properties,
+      );
+      final file = File('${outputDir.path}/$fileName');
+      await file.writeAsString(builder.build());
+    } else {
+      final entityClassName = endpoint.entityClassName;
+      final entityImportPath = _getEntityImportPath(featureName, endpoint.name);
+      final builder = ModelBuilder(
+        className: className,
+        entityClassName: entityClassName,
+        entityImportPath: entityImportPath,
+        properties: properties,
+      );
+      final file = File('${outputDir.path}/$fileName');
+      await file.writeAsString(builder.build());
+    }
+  }
 
-    final file = File('${outputDir.path}/$fileName');
-    await file.writeAsString(builder.build());
+  /// Gets the entity import path relative to the response model file.
+  String _getEntityImportPath(String featureName, String endpointName) {
+    final entityFileName = '${StringUtils.toSnakeCase(endpointName)}_entity.dart';
+    return switch (architectureStyle) {
+      ArchitectureStyle.featureFirst => 
+        // From: lib/features/{feature}/data/models/responses/file.dart
+        // To:   lib/features/{feature}/domain/entities/file.dart
+        '../../../domain/entities/$entityFileName',
+      ArchitectureStyle.layerFirst => 
+        // From: lib/data/models/{feature}/responses/file.dart
+        // To:   lib/domain/entities/{feature}/file.dart
+        '../../../../domain/entities/$featureName/$entityFileName',
+      ArchitectureStyle.simple => 
+        '', // No entity in simple architecture
+    };
   }
 
   Map<String, dynamic> _flattenProperties(Map<String, dynamic> data) {
