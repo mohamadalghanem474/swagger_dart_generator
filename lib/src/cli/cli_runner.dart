@@ -53,7 +53,7 @@ class CliRunner {
     final architecture = arch?.isEmpty == true ? 'feature' : arch!;
 
     stdout.write('🚀 Generate Bloc/Cubit? (y/n) [default: n]: ');
-    final bloc = stdin.readLineSync()?.trim()?.toLowerCase() == 'y';
+    final bloc = stdin.readLineSync()?.trim().toLowerCase() == 'y';
 
     _info('\n✅ Configuration saved! Generating code...');
 
