@@ -10,8 +10,8 @@ import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 /// Generates domain repository interfaces.
 ///
 /// Output structure varies by architecture style:
-/// - Feature-First: lib/features/{feature}/domain/repositories/
-/// - Layer-First: lib/domain/repositories/
+/// - feature: lib/features/{feature}/domain/repositories/
+/// - layer: lib/domain/repositories/
 /// - Simple: skipped (interface + impl in same file)
 class RepositoryInterfaceGenerator {
   final String outputDir;
@@ -49,26 +49,24 @@ class RepositoryInterfaceGenerator {
   String _getEntityImport(String featureName, String endpointName) {
     final entityFileName = '${StringUtils.toSnakeCase(endpointName)}_entity.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/domain/entities/$entityFileName',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/domain/entities/$featureName/$entityFileName',
-      ArchitectureStyle.simple => 
-        'package:$packageName/models/$featureName/$entityFileName',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/domain/entities/$entityFileName',
+      ArchitectureStyle.layerFirst => 'package:$packageName/domain/entities/$featureName/$entityFileName',
+      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/$entityFileName',
     };
   }
 
   /// Gets the request model import path based on architecture style.
+  /// For clean architecture, requests are in usecases. For simple, they're in models.
   String _getRequestImport(String featureName, String endpointName) {
-    final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
-    final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_req.dart';
+    final fileName = '${StringUtils.toSnakeCase(endpointName)}_usecase.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/data/models/requests/$fileName',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/data/models/$featureName/requests/$fileName',
-      ArchitectureStyle.simple => 
-        'package:$packageName/models/$featureName/requests/$fileName',
+      ArchitectureStyle.featureFirst =>
+        // Request is in the usecase file
+        'package:$packageName/features/$featureName/domain/usecases/$fileName',
+      ArchitectureStyle.layerFirst =>
+        // Request is in the usecase file
+        'package:$packageName/domain/usecases/$featureName/$fileName',
+      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/${featureName}_${StringUtils.toSnakeCase(endpointName)}_req.dart',
     };
   }
 
@@ -97,9 +95,7 @@ class RepositoryInterfaceGenerator {
 
       // Request model imports (for method parameters)
       for (final endpoint in category.endpoints) {
-        if (endpoint.hasRequestBody ||
-            endpoint.queryParams.isNotEmpty ||
-            endpoint.pathParams.isNotEmpty) {
+        if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
           b.directives.add(Directive.import(
             _getRequestImport(featureName, endpoint.name),
           ));
@@ -128,18 +124,14 @@ class RepositoryInterfaceGenerator {
 
   /// Builds an interface method definition.
   Method _buildInterfaceMethod(EndpointModel endpoint) {
-    final returnType = endpoint.hasResponseBody
-        ? 'Future<Either<FailureDetails, ${endpoint.entityClassName}>>'
-        : 'Future<Either<FailureDetails, void>>';
+    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, ${endpoint.entityClassName}>>' : 'Future<Either<FailureDetails, void>>';
 
     final builder = MethodBuilder()
       ..name = endpoint.methodName
       ..returns = refer(returnType);
 
     // Request parameter
-    if (endpoint.hasRequestBody ||
-        endpoint.queryParams.isNotEmpty ||
-        endpoint.pathParams.isNotEmpty) {
+    if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
       builder.requiredParameters.add(Parameter((b) {
         b
           ..name = 'req'

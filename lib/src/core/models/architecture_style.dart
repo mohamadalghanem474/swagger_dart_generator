@@ -2,8 +2,8 @@
 ///
 /// Defines how the generated code is organized structurally.
 enum ArchitectureStyle {
-  /// Feature-First Clean Architecture (default)
-  /// 
+  /// feature Clean Architecture (default)
+  ///
   /// Structure:
   /// ```
   /// lib/features/{feature}/
@@ -16,12 +16,12 @@ enum ArchitectureStyle {
   ///       ├── datasources/
   ///       └── repositories/
   /// ```
-  /// 
+  ///
   /// Best for: Medium to large apps, team collaboration, scalability
   featureFirst,
 
-  /// Layer-First Clean Architecture
-  /// 
+  /// layer Clean Architecture
+  ///
   /// Structure:
   /// ```
   /// lib/
@@ -34,12 +34,12 @@ enum ArchitectureStyle {
   ///   └── features/{feature}/
   ///       └── usecases/
   /// ```
-  /// 
+  ///
   /// Best for: Large enterprise apps, strict layer separation
   layerFirst,
 
   /// Simple Architecture (no layers, no entities)
-  /// 
+  ///
   /// Structure:
   /// ```
   /// lib/
@@ -47,7 +47,7 @@ enum ArchitectureStyle {
   ///   ├── repositories/       ← Interface + Impl in same file
   ///   └── datasources/
   /// ```
-  /// 
+  ///
   /// Best for: Small apps, prototypes, quick MVPs
   simple,
 }
@@ -57,8 +57,8 @@ extension ArchitectureStyleExtension on ArchitectureStyle {
   /// Human-readable name
   String get displayName {
     return switch (this) {
-      ArchitectureStyle.featureFirst => 'Feature-First Clean Arch',
-      ArchitectureStyle.layerFirst => 'Layer-First Clean Arch',
+      ArchitectureStyle.featureFirst => 'feature Clean Arch',
+      ArchitectureStyle.layerFirst => 'layer Clean Arch',
       ArchitectureStyle.simple => 'Simple (No Layers)',
     };
   }
@@ -66,8 +66,8 @@ extension ArchitectureStyleExtension on ArchitectureStyle {
   /// CLI argument value
   String get cliValue {
     return switch (this) {
-      ArchitectureStyle.featureFirst => 'feature-first',
-      ArchitectureStyle.layerFirst => 'layer-first',
+      ArchitectureStyle.featureFirst => 'feature',
+      ArchitectureStyle.layerFirst => 'layer',
       ArchitectureStyle.simple => 'simple',
     };
   }
@@ -75,26 +75,20 @@ extension ArchitectureStyleExtension on ArchitectureStyle {
   /// Description for help text
   String get description {
     return switch (this) {
-      ArchitectureStyle.featureFirst => 
-        'Each feature has its own domain layer with real entities. Best for scalability.',
-      ArchitectureStyle.layerFirst => 
-        'Domain layer is global with real entities, features only have usecases. Best for strict separation.',
-      ArchitectureStyle.simple => 
-        'No layers, just models/repositories/datasources. No entities layer. Best for small apps.',
+      ArchitectureStyle.featureFirst => 'Each feature has its own domain layer with real entities. Best for scalability.',
+      ArchitectureStyle.layerFirst => 'Domain layer is global with real entities, features only have usecases. Best for strict separation.',
+      ArchitectureStyle.simple => 'No layers, just models/repositories/datasources. No entities layer. Best for small apps.',
     };
   }
 
   /// Whether this style generates usecases
-  bool get generatesUsecases => 
-      this != ArchitectureStyle.simple;
+  bool get generatesUsecases => this != ArchitectureStyle.simple;
 
   /// Whether this style has separate domain layer with real entities
-  bool get hasDomainLayer => 
-      this != ArchitectureStyle.simple;
+  bool get hasDomainLayer => this != ArchitectureStyle.simple;
 
   /// Whether domain is feature-based or global
-  bool get isDomainFeatureBased => 
-      this == ArchitectureStyle.featureFirst;
+  bool get isDomainFeatureBased => this == ArchitectureStyle.featureFirst;
 }
 
 /// Parse architecture style from CLI string
@@ -108,7 +102,6 @@ ArchitectureStyle parseArchitectureStyle(String value) {
 /// Get all available styles as CLI choices
 Map<String, String> getArchitectureStyleChoices() {
   return {
-    for (final style in ArchitectureStyle.values)
-      style.cliValue: '${style.displayName}: ${style.description}',
+    for (final style in ArchitectureStyle.values) style.cliValue: '${style.displayName}: ${style.description}',
   };
 }

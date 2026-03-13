@@ -10,8 +10,8 @@ import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 /// Generates data repository implementations.
 ///
 /// Output structure varies by architecture style:
-/// - Feature-First: lib/features/{feature}/data/repositories/
-/// - Layer-First: lib/data/repositories/
+/// - feature: lib/features/{feature}/data/repositories/
+/// - layer: lib/data/repositories/
 /// - Simple: lib/repositories/ (interface + impl in same file)
 class RepositoryImplGenerator {
   final String outputDir;
@@ -80,13 +80,17 @@ class RepositoryImplGenerator {
   }
 
   /// Gets the request model import path based on architecture style.
+  /// For clean architecture, requests are in usecases. For simple, they're in models.
   String _getRequestImport(String featureName, String endpointName) {
-    final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
-    final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_req.dart';
+    final fileName = '${StringUtils.toSnakeCase(endpointName)}_usecase.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/models/requests/$fileName',
-      ArchitectureStyle.layerFirst => 'package:$packageName/data/models/$featureName/requests/$fileName',
-      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/$fileName',
+      ArchitectureStyle.featureFirst =>
+        // Request is in the usecase file
+        'package:$packageName/features/$featureName/domain/usecases/$fileName',
+      ArchitectureStyle.layerFirst =>
+        // Request is in the usecase file
+        'package:$packageName/domain/usecases/$featureName/$fileName',
+      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/${featureName}_${StringUtils.toSnakeCase(endpointName)}_req.dart',
     };
   }
 
@@ -105,12 +109,12 @@ class RepositoryImplGenerator {
       b.directives.add(Directive.import('package:$packageName/failure.dart'));
       b.directives.add(Directive.import('package:dartz/dartz.dart'));
       b.directives.add(Directive.import('package:dio/dio.dart'));
-      
+
       // For non-simple architecture, import the interface
       if (!isSimple) {
         b.directives.add(Directive.import(_getRepositoryInterfaceImport(featureName)));
       }
-      
+
       b.directives.add(Directive.import(_getDatasourceImport(featureName)));
 
       // Individual entity imports
@@ -163,9 +167,7 @@ class RepositoryImplGenerator {
   /// Builds an interface method definition.
   Method _buildInterfaceMethod(EndpointModel endpoint) {
     final returnClassName = _getReturnTypeClassName(endpoint);
-    final returnType = endpoint.hasResponseBody
-        ? 'Future<Either<FailureDetails, $returnClassName>>'
-        : 'Future<Either<FailureDetails, void>>';
+    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, $returnClassName>>' : 'Future<Either<FailureDetails, void>>';
 
     final builder = MethodBuilder()
       ..name = endpoint.methodName
@@ -237,9 +239,7 @@ class RepositoryImplGenerator {
 
   Method _buildImplementationMethod(EndpointModel endpoint) {
     final returnClassName = _getReturnTypeClassName(endpoint);
-    final returnType = endpoint.hasResponseBody
-        ? 'Future<Either<FailureDetails, $returnClassName>>'
-        : 'Future<Either<FailureDetails, void>>';
+    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, $returnClassName>>' : 'Future<Either<FailureDetails, void>>';
 
     return Method((b) {
       b
@@ -272,9 +272,7 @@ class RepositoryImplGenerator {
     final methodCall = '_dataSource.${endpoint.methodName}';
     final params = hasReq ? 'req' : '';
     final namedParams = 'cancelToken: cancelToken, options: options';
-    final fullCall = params.isNotEmpty
-        ? '$methodCall($params, $namedParams)'
-        : '$methodCall($namedParams)';
+    final fullCall = params.isNotEmpty ? '$methodCall($params, $namedParams)' : '$methodCall($namedParams)';
 
     statements.add(Code('try {'));
     if (endpoint.hasResponseBody) {

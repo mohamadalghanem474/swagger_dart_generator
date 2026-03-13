@@ -8,8 +8,8 @@ import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 /// Generates domain entities.
 ///
 /// Output structure varies by architecture style:
-/// - Feature-First: lib/features/{feature}/domain/entities/
-/// - Layer-First: lib/domain/entities/{feature}/
+/// - feature: lib/features/{feature}/domain/entities/
+/// - layer: lib/domain/entities/{feature}/
 /// - Simple: No entities (return early or skip)
 class EntitiesGenerator {
   final String outputDir;
@@ -43,10 +43,10 @@ class EntitiesGenerator {
   Future<void> _generateFeatureEntities(EndpointCategory category) async {
     final featureName = StringUtils.toSnakeCase(category.name);
     final entitiesPath = _getEntitiesPath(featureName);
-    
+
     // Skip for simple architecture (no entities layer)
     if (entitiesPath == null) return;
-    
+
     final entitiesDir = Directory(entitiesPath);
     entitiesDir.createSync(recursive: true);
 
@@ -67,9 +67,7 @@ class EntitiesGenerator {
     final fileName = '${StringUtils.toSnakeCase(endpoint.name)}_entity.dart';
 
     // Extract properties from response body
-    final properties = endpoint.responseBody != null 
-        ? _extractProperties(endpoint.responseBody!)
-        : <String, dynamic>{};
+    final properties = endpoint.responseBody != null ? _extractProperties(endpoint.responseBody!) : <String, dynamic>{};
 
     final builder = EntityBuilder(
       className: className,

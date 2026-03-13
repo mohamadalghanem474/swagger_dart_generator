@@ -29,9 +29,9 @@ Options:
 -i, --input          Path to the Swagger/OpenAPI JSON file (default: swagger.json)
 -o, --output         Output directory for the generated package (default: .)
 -n, --name           Package name (defaults to output directory name)
--a, --architecture   Architecture pattern to use (default: feature-first)
-    feature-first    Feature-First Clean Arch: Each feature has its own domain and data layers
-    layer-first      Layer-First Clean Arch: Domain and data layers are global
+-a, --architecture   Architecture pattern to use (default: feature)
+    feature    feature Clean Arch: Each feature has its own domain and data layers
+    layer      layer Clean Arch: Domain and data layers are global
     clean-mixed      Clean Mixed: Domain is shared globally, each feature has its own data layer
     simple           Simple (No Layers): Best for small apps/prototypes
 -v, --verbose        Enable verbose logging
@@ -43,21 +43,21 @@ Options:
 
 Choose the architecture pattern that best fits your project:
 
-| Style | Structure | Best For |
-|-------|-----------|----------|
-| **feature-first** (default) | `lib/features/{feature}/{domain,data}/` | Medium to large apps, team collaboration |
-| **layer-first** | `lib/domain/`, `lib/data/`, `lib/features/{feature}/usecases/` | Large enterprise apps, strict separation |
-| **clean-mixed** | `lib/domain/` (shared) + `lib/features/{feature}/data/` | Balanced approach, shared domain logic |
-| **simple** | `lib/{models,repositories,datasources}/` | Small apps, prototypes, quick MVPs |
+| Style                 | Structure                                                      | Best For                                 |
+| --------------------- | -------------------------------------------------------------- | ---------------------------------------- |
+| **feature** (default) | `lib/features/{feature}/{domain,data}/`                        | Medium to large apps, team collaboration |
+| **layer**             | `lib/domain/`, `lib/data/`, `lib/features/{feature}/usecases/` | Large enterprise apps, strict separation |
+| **clean-mixed**       | `lib/domain/` (shared) + `lib/features/{feature}/data/`        | Balanced approach, shared domain logic   |
+| **simple**            | `lib/{models,repositories,datasources}/`                       | Small apps, prototypes, quick MVPs       |
 
 #### Example: Using Different Architectures
 
 ```bash
-# Feature-first (default) - best for scalable apps
-swagger_dart_generator -i api.json -o my_package --architecture feature-first
+# feature (default) - best for scalable apps
+swagger_dart_generator -i api.json -o my_package --architecture feature
 
-# Layer-first - best for strict architectural boundaries
-swagger_dart_generator -i api.json -o my_package --architecture layer-first
+# layer - best for strict architectural boundaries
+swagger_dart_generator -i api.json -o my_package --architecture layer
 
 # Simple - best for quick prototypes
 swagger_dart_generator -i api.json -o my_package --architecture simple
@@ -90,7 +90,7 @@ void main() async {
 
 ## 📂 Generated Files Structure
 
-### Feature-First Architecture (Default)
+### feature Architecture (Default)
 
 ```
 lib/
@@ -110,7 +110,7 @@ lib/
 └── {package_name}.dart              # Main API class with DI
 ```
 
-### Layer-First Architecture
+### layer Architecture
 
 ```
 lib/

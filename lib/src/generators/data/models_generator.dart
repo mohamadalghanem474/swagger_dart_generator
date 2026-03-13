@@ -8,8 +8,8 @@ import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 /// Generates data models with barrel exports.
 ///
 /// Output structure varies by architecture style:
-/// - Feature-First: lib/features/{feature}/data/models/{requests, responses}/
-/// - Layer-First: lib/data/models/{feature}/{requests, responses}/
+/// - feature: lib/features/{feature}/data/models/{requests, responses}/
+/// - layer: lib/data/models/{feature}/{requests, responses}/
 /// - Simple: lib/models/{requests, responses}/
 class ModelsGenerator {
   final String outputDir;
@@ -54,17 +54,17 @@ class ModelsGenerator {
 
     for (final endpoint in category.endpoints) {
       // In simple architecture, prefix filenames with feature name to avoid collisions
-      final filePrefix = architectureStyle == ArchitectureStyle.simple 
-          ? '${featureName}_' 
-          : '';
-      
-      // Generate request model
-      if (endpoint.hasRequestBody) {
-        await _generateRequestModel(endpoint, requestsDir, filePrefix: filePrefix);
-        requestExports.add("export 'requests/${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_req.dart';");
-      } else if (endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
-        await _generateParamsRequestModel(endpoint, requestsDir, filePrefix: filePrefix);
-        requestExports.add("export 'requests/${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_req.dart';");
+      final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
+
+      // Generate request model (only for simple architecture - for clean arch, requests are in usecases)
+      if (architectureStyle == ArchitectureStyle.simple) {
+        if (endpoint.hasRequestBody) {
+          await _generateRequestModel(endpoint, requestsDir, filePrefix: filePrefix);
+          requestExports.add("export 'requests/${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_req.dart';");
+        } else if (endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
+          await _generateParamsRequestModel(endpoint, requestsDir, filePrefix: filePrefix);
+          requestExports.add("export 'requests/${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_req.dart';");
+        }
       }
 
       // Generate response model
@@ -98,7 +98,7 @@ class ModelsGenerator {
     final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_req.dart';
 
     final properties = <String, dynamic>{};
-    
+
     if (endpoint.requestBody != null) {
       properties.addAll(_flattenProperties(endpoint.requestBody!));
     }
@@ -113,7 +113,7 @@ class ModelsGenerator {
       properties[fieldName] = _getDefaultValueForType(param.type);
     }
 
-    // Request models need toJson for serialization
+    // For simple architecture: Request models need Equatable, toJson, fromJson
     final builder = ModelBuilder(
       className: className,
       properties: properties,
@@ -145,7 +145,7 @@ class ModelsGenerator {
 
     if (properties.isEmpty) return;
 
-    // Request models need toJson for serialization
+    // For simple architecture: Request models need Equatable, toJson, fromJson
     final builder = ModelBuilder(
       className: className,
       properties: properties,
@@ -157,19 +157,17 @@ class ModelsGenerator {
 
   Future<void> _generateResponseModel(
     EndpointModel endpoint,
-    Directory outputDir, 
+    Directory outputDir,
     String featureName, {
     String filePrefix = '',
   }) async {
     final className = endpoint.responseClassName;
     final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_res.dart';
 
-    final properties = endpoint.responseBody != null 
-        ? _flattenProperties(endpoint.responseBody!)
-        : <String, dynamic>{};
+    final properties = endpoint.responseBody != null ? _flattenProperties(endpoint.responseBody!) : <String, dynamic>{};
 
     // For simple architecture, response models are standalone (no entity layer)
-    // For feature-first and layer-first, response models extend Entity
+    // For feature and layer, response models extend Entity
     if (architectureStyle == ArchitectureStyle.simple) {
       final builder = ModelBuilder(
         className: className,
@@ -195,16 +193,15 @@ class ModelsGenerator {
   String _getEntityImportPath(String featureName, String endpointName) {
     final entityFileName = '${StringUtils.toSnakeCase(endpointName)}_entity.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
+      ArchitectureStyle.featureFirst =>
         // From: lib/features/{feature}/data/models/responses/file.dart
         // To:   lib/features/{feature}/domain/entities/file.dart
         '../../../domain/entities/$entityFileName',
-      ArchitectureStyle.layerFirst => 
+      ArchitectureStyle.layerFirst =>
         // From: lib/data/models/{feature}/responses/file.dart
         // To:   lib/domain/entities/{feature}/file.dart
         '../../../../domain/entities/$featureName/$entityFileName',
-      ArchitectureStyle.simple => 
-        '', // No entity in simple architecture
+      ArchitectureStyle.simple => '', // No entity in simple architecture
     };
   }
 

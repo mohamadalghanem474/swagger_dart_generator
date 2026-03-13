@@ -32,28 +32,22 @@ class TestGenerator {
   }
 
   /// Gets the repository import path based on architecture style.
-  String _getRepositoryImport(String featureName) {
-    return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.simple => 
-        'package:$packageName/repositories/${featureName}_repository.dart',
-    };
-  }
+  // String _getRepositoryImport(String featureName) {
+  //   return switch (architectureStyle) {
+  //     ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/domain/repositories/${featureName}_repository.dart',
+  //     ArchitectureStyle.layerFirst => 'package:$packageName/domain/repositories/${featureName}_repository.dart',
+  //     ArchitectureStyle.simple => 'package:$packageName/repositories/${featureName}_repository.dart',
+  //   };
+  // }
 
   /// Gets the request model import path based on architecture style.
+  /// For clean architecture, requests are in usecases. For simple, they're in models.
   String _getRequestImport(String featureName, String endpointName) {
-    final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
-    final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_req.dart';
+    final fileName = '${StringUtils.toSnakeCase(endpointName)}_usecase.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/data/models/requests/$fileName',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/data/models/$featureName/requests/$fileName',
-      ArchitectureStyle.simple => 
-        'package:$packageName/models/$featureName/requests/$fileName',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/domain/usecases/$fileName',
+      ArchitectureStyle.layerFirst => 'package:$packageName/domain/usecases/$featureName/$fileName',
+      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/${featureName}_${StringUtils.toSnakeCase(endpointName)}_req.dart',
     };
   }
 
@@ -63,20 +57,16 @@ class TestGenerator {
   ) async {
     final featureName = StringUtils.toSnakeCase(category.name);
     final fileName = '${featureName}_test.dart';
-    
+
     final library = Library((b) {
       b.directives.add(Directive.import('package:dio/dio.dart'));
       b.directives.add(Directive.import('package:test/test.dart'));
       b.directives.add(Directive.import('package:$packageName/$packageName.dart'));
       b.directives.add(Directive.import('package:$packageName/failure.dart'));
-      b.directives.add(Directive.import(
-        _getRepositoryImport(featureName),
-      ));
+      //  b.directives.add(Directive.import(_getRepositoryImport(featureName)));
 
       for (final endpoint in category.endpoints) {
-        if (endpoint.hasRequestBody ||
-            endpoint.queryParams.isNotEmpty ||
-            endpoint.pathParams.isNotEmpty) {
+        if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
           b.directives.add(Directive.import(
             _getRequestImport(featureName, endpoint.name),
           ));
@@ -114,9 +104,7 @@ class TestGenerator {
     buffer.writeln();
     buffer.writeln('    test(\'${methodName} should return Right\', () async {');
 
-    if (endpoint.hasRequestBody ||
-        endpoint.queryParams.isNotEmpty ||
-        endpoint.pathParams.isNotEmpty) {
+    if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
       buffer.writeln('      final req = ${endpoint.requestClassName}();');
       buffer.writeln('      final result = await api.$camelCategory.$methodName(req);');
     } else {

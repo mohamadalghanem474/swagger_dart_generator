@@ -10,8 +10,8 @@ import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 /// Generates data source implementations.
 ///
 /// Output structure varies by architecture style:
-/// - Feature-First: lib/features/{feature}/data/datasources/
-/// - Layer-First: lib/data/datasources/
+/// - feature: lib/features/{feature}/data/datasources/
+/// - layer: lib/data/datasources/
 class DatasourceImplGenerator {
   final String outputDir;
   final String packageName;
@@ -48,13 +48,17 @@ class DatasourceImplGenerator {
   }
 
   /// Gets the request model import path based on architecture style.
+  /// For clean architecture, requests are in usecases. For simple, they're in models.
   String _getRequestImport(String featureName, String endpointName) {
-    final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
-    final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_req.dart';
+    final fileName = '${StringUtils.toSnakeCase(endpointName)}_usecase.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/models/requests/$fileName',
-      ArchitectureStyle.layerFirst => 'package:$packageName/data/models/$featureName/requests/$fileName',
-      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/$fileName',
+      ArchitectureStyle.featureFirst =>
+        // Request is in the usecase file
+        'package:$packageName/features/$featureName/domain/usecases/$fileName',
+      ArchitectureStyle.layerFirst =>
+        // Request is in the usecase file
+        'package:$packageName/domain/usecases/$featureName/$fileName',
+      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/${featureName}_${StringUtils.toSnakeCase(endpointName)}_req.dart',
     };
   }
 
