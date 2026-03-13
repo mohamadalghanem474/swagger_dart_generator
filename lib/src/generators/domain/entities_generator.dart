@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
 import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
+import 'package:swagger_dart_generator/src/generators/models/builders/class_builder.dart';
 import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 
 /// Generates domain entities.
@@ -44,39 +45,65 @@ class EntitiesGenerator {
     };
   }
 
-  /// Gets the relative import path to response models.
-  String _getModelImportPath(String featureName) {
-    return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => '../../data/models/responses',
-      ArchitectureStyle.layerFirst => '../../data/models/$featureName/responses',
-      ArchitectureStyle.cleanMixed => '../../features/$featureName/data/models/responses',
-      ArchitectureStyle.simple => 'responses',
-    };
-  }
-
   /// Generates entities for a single feature.
   Future<void> _generateFeatureEntities(EndpointCategory category) async {
     final featureName = StringUtils.toSnakeCase(category.name);
     final entitiesDir = Directory(_getEntitiesPath(featureName));
     entitiesDir.createSync(recursive: true);
 
-    final buffer = StringBuffer();
-    buffer.writeln('// Domain Entities for ${category.name} Feature');
-    buffer.writeln('// In Clean Architecture, entities represent domain objects');
-    buffer.writeln();
-    buffer.writeln('// For simplicity, we export response models as entities');
-    buffer.writeln('// In production, map Data Models -> Domain Entities');
-    buffer.writeln();
-    
+    // Generate individual entity files for each response
     for (final endpoint in category.endpoints) {
       if (endpoint.hasResponseBody) {
-        final modelName = endpoint.responseClassName;
-        final importPath = _getModelImportPath(featureName);
-        buffer.writeln("export '$importPath/${StringUtils.toSnakeCase(endpoint.name)}_res.dart' show $modelName;");
+        await _generateEntityFile(endpoint, entitiesDir);
       }
     }
+  }
 
-    final file = File('${entitiesDir.path}/${featureName}_entities.dart');
-    await file.writeAsString(buffer.toString());
+  /// Generates a single entity file based on response model.
+  Future<void> _generateEntityFile(
+    EndpointModel endpoint,
+    Directory outputDir,
+  ) async {
+    final className = endpoint.responseClassName;
+    final fileName = '${StringUtils.toSnakeCase(endpoint.name)}_entity.dart';
+
+    // Extract properties from response body
+    final properties = endpoint.responseBody != null 
+        ? _extractProperties(endpoint.responseBody!)
+        : <String, dynamic>{};
+
+    final builder = ClassBuilder(
+      className: className,
+      properties: properties,
+      useEquatable: true,
+    );
+
+    final file = File('${outputDir.path}/$fileName');
+    await file.writeAsString(builder.build());
+  }
+
+  /// Extracts properties from response body schema.
+  Map<String, dynamic> _extractProperties(Map<String, dynamic> data) {
+    final result = <String, dynamic>{};
+
+    data.forEach((key, value) {
+      if (value is Map<String, dynamic>) {
+        // Check if nested object
+        final hasNested = value.values.any((v) => v is Map || v is List);
+        if (hasNested) {
+          result[key] = StringUtils.toPascalCase(key);
+        } else {
+          // Flat object - include its properties directly
+          result[key] = value;
+        }
+      } else if (value is List && value.isNotEmpty && value.first is Map) {
+        // List of objects
+        result[key] = ['${StringUtils.toPascalCase(key)}Item'];
+      } else {
+        result[key] = value;
+      }
+    });
+
+    return result;
   }
 }

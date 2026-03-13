@@ -52,7 +52,7 @@ class RepositoryInterfaceGenerator {
       ArchitectureStyle.cleanMixed => 
         'package:$packageName/domain/entities/${featureName}_entities.dart',
       ArchitectureStyle.simple => 
-        'package:$packageName/models/${featureName}_responses.dart',
+        'package:$packageName/models/${featureName}_models.dart',
     };
   }
 

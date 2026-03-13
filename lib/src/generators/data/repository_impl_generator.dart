@@ -43,28 +43,20 @@ class RepositoryImplGenerator {
   /// Gets the datasource import path based on architecture style.
   String _getDatasourceImport(String featureName) {
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/data/datasources/${featureName}_remote_datasource.dart',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/data/datasources/${featureName}_datasource.dart',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/features/$featureName/data/datasources/${featureName}_datasource.dart',
-      ArchitectureStyle.simple => 
-        'package:$packageName/datasources/${featureName}_datasource.dart',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/datasources/${featureName}_remote_datasource.dart',
+      ArchitectureStyle.layerFirst => 'package:$packageName/data/datasources/${featureName}_datasource.dart',
+      ArchitectureStyle.cleanMixed => 'package:$packageName/features/$featureName/data/datasources/${featureName}_datasource.dart',
+      ArchitectureStyle.simple => 'package:$packageName/datasources/${featureName}_datasource.dart',
     };
   }
 
   /// Gets the repository interface import path based on architecture style.
   String _getRepositoryInterfaceImport(String featureName) {
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.simple => 
-        'package:$packageName/repositories/${featureName}_repository.dart',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/domain/repositories/${featureName}_repository.dart',
+      ArchitectureStyle.layerFirst => 'package:$packageName/domain/repositories/${featureName}_repository.dart',
+      ArchitectureStyle.cleanMixed => 'package:$packageName/domain/repositories/${featureName}_repository.dart',
+      ArchitectureStyle.simple => 'package:$packageName/repositories/${featureName}_repository.dart',
     };
   }
 
@@ -73,14 +65,10 @@ class RepositoryImplGenerator {
     final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
     final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_req.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/data/models/requests/$fileName',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/data/models/$featureName/requests/$fileName',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/features/$featureName/data/models/requests/$fileName',
-      ArchitectureStyle.simple => 
-        'package:$packageName/models/requests/$fileName',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/models/requests/$fileName',
+      ArchitectureStyle.layerFirst => 'package:$packageName/data/models/$featureName/requests/$fileName',
+      ArchitectureStyle.cleanMixed => 'package:$packageName/features/$featureName/data/models/requests/$fileName',
+      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/$fileName',
     };
   }
 
@@ -89,14 +77,10 @@ class RepositoryImplGenerator {
     final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
     final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_res.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/data/models/responses/$fileName',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/data/models/$featureName/responses/$fileName',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/features/$featureName/data/models/responses/$fileName',
-      ArchitectureStyle.simple => 
-        'package:$packageName/models/responses/$fileName',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/models/responses/$fileName',
+      ArchitectureStyle.layerFirst => 'package:$packageName/data/models/$featureName/responses/$fileName',
+      ArchitectureStyle.cleanMixed => 'package:$packageName/features/$featureName/data/models/responses/$fileName',
+      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/responses/$fileName',
     };
   }
 
@@ -119,9 +103,7 @@ class RepositoryImplGenerator {
 
       // Individual model imports
       for (final endpoint in category.endpoints) {
-        if (endpoint.hasRequestBody ||
-            endpoint.queryParams.isNotEmpty ||
-            endpoint.pathParams.isNotEmpty) {
+        if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
           b.directives.add(Directive.import(
             _getRequestImport(featureName, endpoint.name),
           ));
@@ -183,9 +165,7 @@ class RepositoryImplGenerator {
   }
 
   Method _buildImplementationMethod(EndpointModel endpoint) {
-    final returnType = endpoint.hasResponseBody
-        ? 'Future<Either<FailureDetails, ${endpoint.responseClassName}>>'
-        : 'Future<Either<FailureDetails, void>>';
+    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, ${endpoint.responseClassName}>>' : 'Future<Either<FailureDetails, void>>';
 
     return Method((b) {
       b
@@ -194,9 +174,7 @@ class RepositoryImplGenerator {
         ..annotations.add(refer('override'))
         ..modifier = MethodModifier.async;
 
-      if (endpoint.hasRequestBody ||
-          endpoint.queryParams.isNotEmpty ||
-          endpoint.pathParams.isNotEmpty) {
+      if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
         b.requiredParameters.add(Parameter((b) {
           b
             ..name = 'req'
@@ -216,15 +194,11 @@ class RepositoryImplGenerator {
   Block _buildInlineTryCatchBody(EndpointModel endpoint) {
     final statements = <Code>[];
 
-    final hasReq = endpoint.hasRequestBody ||
-        endpoint.queryParams.isNotEmpty ||
-        endpoint.pathParams.isNotEmpty;
+    final hasReq = endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty;
     final methodCall = '_dataSource.${endpoint.methodName}';
     final params = hasReq ? 'req' : '';
     final namedParams = 'cancelToken: cancelToken, options: options';
-    final fullCall = params.isNotEmpty
-        ? '$methodCall($params, $namedParams)'
-        : '$methodCall($namedParams)';
+    final fullCall = params.isNotEmpty ? '$methodCall($params, $namedParams)' : '$methodCall($namedParams)';
 
     statements.add(Code('try {'));
     if (endpoint.hasResponseBody) {

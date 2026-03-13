@@ -55,14 +55,10 @@ class DatasourceImplGenerator {
     final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
     final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_req.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/data/models/requests/$fileName',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/data/models/$featureName/requests/$fileName',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/features/$featureName/data/models/requests/$fileName',
-      ArchitectureStyle.simple => 
-        'package:$packageName/models/requests/$fileName',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/models/requests/$fileName',
+      ArchitectureStyle.layerFirst => 'package:$packageName/data/models/$featureName/requests/$fileName',
+      ArchitectureStyle.cleanMixed => 'package:$packageName/features/$featureName/data/models/requests/$fileName',
+      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/$fileName',
     };
   }
 
@@ -71,14 +67,10 @@ class DatasourceImplGenerator {
     final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
     final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_res.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/data/models/responses/$fileName',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/data/models/$featureName/responses/$fileName',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/features/$featureName/data/models/responses/$fileName',
-      ArchitectureStyle.simple => 
-        'package:$packageName/models/responses/$fileName',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/models/responses/$fileName',
+      ArchitectureStyle.layerFirst => 'package:$packageName/data/models/$featureName/responses/$fileName',
+      ArchitectureStyle.cleanMixed => 'package:$packageName/features/$featureName/data/models/responses/$fileName',
+      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/responses/$fileName',
     };
   }
 
@@ -100,9 +92,7 @@ class DatasourceImplGenerator {
 
       // Individual model imports
       for (final endpoint in category.endpoints) {
-        if (endpoint.hasRequestBody ||
-            endpoint.queryParams.isNotEmpty ||
-            endpoint.pathParams.isNotEmpty) {
+        if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
           b.directives.add(Directive.import(
             _getRequestImport(featureName, endpoint.name),
           ));
@@ -161,17 +151,13 @@ class DatasourceImplGenerator {
   }
 
   Method _buildInterfaceMethod(EndpointModel endpoint) {
-    final returnType = endpoint.hasResponseBody
-        ? 'Future<${endpoint.responseClassName}>'
-        : 'Future<void>';
+    final returnType = endpoint.hasResponseBody ? 'Future<${endpoint.responseClassName}>' : 'Future<void>';
 
     final builder = MethodBuilder()
       ..name = endpoint.methodName
       ..returns = refer(returnType);
 
-    if (endpoint.hasRequestBody ||
-        endpoint.queryParams.isNotEmpty ||
-        endpoint.pathParams.isNotEmpty) {
+    if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
       builder.requiredParameters.add(Parameter((b) {
         b
           ..name = 'req'
@@ -188,9 +174,7 @@ class DatasourceImplGenerator {
   }
 
   Method _buildImplementationMethod(EndpointModel endpoint, String categoryName) {
-    final returnType = endpoint.hasResponseBody
-        ? 'Future<${endpoint.responseClassName}>'
-        : 'Future<void>';
+    final returnType = endpoint.hasResponseBody ? 'Future<${endpoint.responseClassName}>' : 'Future<void>';
 
     return Method((b) {
       b
@@ -199,9 +183,7 @@ class DatasourceImplGenerator {
         ..annotations.add(refer('override'))
         ..modifier = MethodModifier.async;
 
-      if (endpoint.hasRequestBody ||
-          endpoint.queryParams.isNotEmpty ||
-          endpoint.pathParams.isNotEmpty) {
+      if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
         b.requiredParameters.add(Parameter((b) {
           b
             ..name = 'req'

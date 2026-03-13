@@ -36,7 +36,7 @@ class ModelsGenerator {
       ArchitectureStyle.featureFirst => '$outputDir/lib/features/$featureName/data/models',
       ArchitectureStyle.layerFirst => '$outputDir/lib/data/models/$featureName',
       ArchitectureStyle.cleanMixed => '$outputDir/lib/features/$featureName/data/models',
-      ArchitectureStyle.simple => '$outputDir/lib/models',
+      ArchitectureStyle.simple => '$outputDir/lib/models/$featureName',
     };
   }
 
