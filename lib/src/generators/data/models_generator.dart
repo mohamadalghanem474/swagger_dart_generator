@@ -1,82 +1,115 @@
 import 'dart:io';
 
+import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
 import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
 import 'package:swagger_dart_generator/src/generators/models/builders/class_builder.dart';
 import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 
-/// Generates Dart model classes from endpoint definitions.
+/// Generates data models with barrel exports.
 ///
-/// This generator creates:
-/// - Request models (e.g., `LoginRequest`)
-/// - Response models (e.g., `LoginResponse`)
-/// - Nested models for complex types
-///
-/// Output structure (Clean Architecture by Feature):
-/// lib/features/{feature}/models/{requests, responses}/
-class ModelGenerator {
+/// Output structure varies by architecture style:
+/// - Feature-First: lib/features/{feature}/data/models/{requests, responses}/
+/// - Layer-First: lib/data/models/{feature}/{requests, responses}/
+/// - Clean-Mixed: lib/features/{feature}/data/models/{requests, responses}/
+/// - Simple: lib/models/{requests, responses}/
+class ModelsGenerator {
   final String outputDir;
   final String packageName;
+  final ArchitectureStyle architectureStyle;
 
-  ModelGenerator({
+  ModelsGenerator({
     required this.outputDir,
     required this.packageName,
+    required this.architectureStyle,
   });
 
-  /// Generates all models for the given endpoint categories.
+  /// Generates models for all features.
   Future<void> generate(List<EndpointCategory> categories) async {
     for (final category in categories) {
       await _generateFeatureModels(category);
     }
   }
 
+  /// Gets the models base directory path based on architecture style.
+  String _getModelsPath(String featureName) {
+    return switch (architectureStyle) {
+      ArchitectureStyle.featureFirst => '$outputDir/lib/features/$featureName/data/models',
+      ArchitectureStyle.layerFirst => '$outputDir/lib/data/models/$featureName',
+      ArchitectureStyle.cleanMixed => '$outputDir/lib/features/$featureName/data/models',
+      ArchitectureStyle.simple => '$outputDir/lib/models',
+    };
+  }
+
   /// Generates models for a single feature.
   Future<void> _generateFeatureModels(EndpointCategory category) async {
     final featureName = StringUtils.toSnakeCase(category.name);
-    
-    // Create feature-based structure: lib/features/{feature}/models/
-    final featureDir = Directory('$outputDir/lib/features/$featureName');
-    final modelsDir = Directory('${featureDir.path}/models');
+    final modelsDir = Directory(_getModelsPath(featureName));
     final requestsDir = Directory('${modelsDir.path}/requests');
     final responsesDir = Directory('${modelsDir.path}/responses');
 
-    featureDir.createSync(recursive: true);
     modelsDir.createSync(recursive: true);
     requestsDir.createSync(recursive: true);
     responsesDir.createSync(recursive: true);
 
+    final requestExports = <String>[];
+    final responseExports = <String>[];
+
     for (final endpoint in category.endpoints) {
+      // In simple architecture, prefix filenames with feature name to avoid collisions
+      final filePrefix = architectureStyle == ArchitectureStyle.simple 
+          ? '${featureName}_' 
+          : '';
+      
       // Generate request model
       if (endpoint.hasRequestBody) {
-        await _generateRequestModel(endpoint, requestsDir);
+        await _generateRequestModel(endpoint, requestsDir, filePrefix: filePrefix);
+        requestExports.add("export 'requests/${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_req.dart';");
       } else if (endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
-        // Generate request model for query/path params even if no body
-        await _generateParamsRequestModel(endpoint, requestsDir);
+        await _generateParamsRequestModel(endpoint, requestsDir, filePrefix: filePrefix);
+        requestExports.add("export 'requests/${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_req.dart';");
       }
 
       // Generate response model
       if (endpoint.hasResponseBody) {
-        await _generateResponseModel(endpoint, responsesDir);
+        await _generateResponseModel(endpoint, responsesDir, filePrefix: filePrefix);
+        responseExports.add("export 'responses/${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_res.dart';");
       }
     }
+
+    // Create barrel files
+    await _createBarrelFile('${modelsDir.path}/${featureName}_requests.dart', requestExports);
+    await _createBarrelFile('${modelsDir.path}/${featureName}_responses.dart', responseExports);
   }
 
-  /// Generates a request model from request body + path/query params.
+  Future<void> _createBarrelFile(String path, List<String> exports) async {
+    final buffer = StringBuffer();
+    buffer.writeln('// Barrel file for models');
+    buffer.writeln();
+    for (final export in exports) {
+      buffer.writeln(export);
+    }
+    await File(path).writeAsString(buffer.toString());
+  }
+
   Future<void> _generateRequestModel(
     EndpointModel endpoint,
-    Directory outputDir,
-  ) async {
+    Directory outputDir, {
+    String filePrefix = '',
+  }) async {
     final className = endpoint.requestClassName;
-    final fileName = '${StringUtils.toSnakeCase(endpoint.name)}_req.dart';
+    final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_req.dart';
 
-    final properties = _flattenProperties(endpoint.requestBody!);
+    final properties = <String, dynamic>{};
+    
+    if (endpoint.requestBody != null) {
+      properties.addAll(_flattenProperties(endpoint.requestBody!));
+    }
 
-    // Add path params (camelCase field names)
     for (final param in endpoint.pathParams) {
       final fieldName = StringUtils.toLowerCamelCase(param.name);
       properties[fieldName] = _getDefaultValueForType(param.type);
     }
 
-    // Add query params (camelCase field names)
     for (final param in endpoint.queryParams) {
       final fieldName = StringUtils.toLowerCamelCase(param.name);
       properties[fieldName] = _getDefaultValueForType(param.type);
@@ -88,28 +121,25 @@ class ModelGenerator {
       useEquatable: true,
     );
 
-    final code = builder.build();
     final file = File('${outputDir.path}/$fileName');
-    await file.writeAsString(code);
+    await file.writeAsString(builder.build());
   }
 
-  /// Generates a request model from query/path parameters.
   Future<void> _generateParamsRequestModel(
     EndpointModel endpoint,
-    Directory outputDir,
-  ) async {
+    Directory outputDir, {
+    String filePrefix = '',
+  }) async {
     final className = endpoint.requestClassName;
-    final fileName = '${StringUtils.toSnakeCase(endpoint.name)}_req.dart';
+    final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_req.dart';
 
     final properties = <String, dynamic>{};
 
-    // Add query params (camelCase field names)
     for (final param in endpoint.queryParams) {
       final fieldName = StringUtils.toLowerCamelCase(param.name);
       properties[fieldName] = _getDefaultValueForType(param.type);
     }
 
-    // Add path params (camelCase field names)
     for (final param in endpoint.pathParams) {
       final fieldName = StringUtils.toLowerCamelCase(param.name);
       properties[fieldName] = _getDefaultValueForType(param.type);
@@ -123,20 +153,21 @@ class ModelGenerator {
       useEquatable: true,
     );
 
-    final code = builder.build();
     final file = File('${outputDir.path}/$fileName');
-    await file.writeAsString(code);
+    await file.writeAsString(builder.build());
   }
 
-  /// Generates a response model.
   Future<void> _generateResponseModel(
     EndpointModel endpoint,
-    Directory outputDir,
-  ) async {
+    Directory outputDir, {
+    String filePrefix = '',
+  }) async {
     final className = endpoint.responseClassName;
-    final fileName = '${StringUtils.toSnakeCase(endpoint.name)}_res.dart';
+    final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_res.dart';
 
-    final properties = _flattenProperties(endpoint.responseBody!);
+    final properties = endpoint.responseBody != null 
+        ? _flattenProperties(endpoint.responseBody!)
+        : <String, dynamic>{};
 
     final builder = ClassBuilder(
       className: className,
@@ -144,32 +175,23 @@ class ModelGenerator {
       useEquatable: true,
     );
 
-    final code = builder.build();
     final file = File('${outputDir.path}/$fileName');
-    await file.writeAsString(code);
+    await file.writeAsString(builder.build());
   }
 
-  /// Flattens nested properties for code generation.
-  ///
-  /// For nested objects, generates separate classes.
   Map<String, dynamic> _flattenProperties(Map<String, dynamic> data) {
     final result = <String, dynamic>{};
 
     data.forEach((key, value) {
       if (value is Map<String, dynamic>) {
-        // Check if all values are primitives
         final hasNested = value.values.any((v) => v is Map || v is List);
         if (hasNested) {
-          // Generate nested class name
-          final nestedClassName = StringUtils.toPascalCase(key);
-          result[key] = nestedClassName; // Reference to nested class
+          result[key] = StringUtils.toPascalCase(key);
         } else {
           result[key] = value;
         }
       } else if (value is List && value.isNotEmpty && value.first is Map) {
-        // List of objects
-        final itemClassName = '${StringUtils.toPascalCase(key)}Item';
-        result[key] = [itemClassName]; // List of nested class
+        result[key] = ['${StringUtils.toPascalCase(key)}Item'];
       } else {
         result[key] = value;
       }
@@ -178,7 +200,6 @@ class ModelGenerator {
     return result;
   }
 
-  /// Gets a default value for a Dart type.
   dynamic _getDefaultValueForType(String type) {
     final baseType = type.replaceAll('?', '');
     return switch (baseType) {

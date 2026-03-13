@@ -6,7 +6,10 @@ import 'package:dart_style/dart_style.dart';
 import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
 import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 
-/// Generates repository classes (abstract and implementation).
+/// Generates repository classes (interface and implementation in one file).
+///
+/// Output structure (Clean Architecture by Feature):
+/// lib/features/{feature}/{feature}_repository.dart
 class RepositoryGenerator {
   final String outputDir;
   final String packageName;
@@ -18,116 +21,65 @@ class RepositoryGenerator {
 
   /// Generates all repository files.
   Future<void> generate(List<EndpointCategory> categories) async {
-    final baseDir = Directory('$outputDir/lib/data/repositories');
-    if (!baseDir.existsSync()) {
-      baseDir.createSync(recursive: true);
-    }
-
     for (final category in categories) {
-      await _generateCategoryRepository(category, baseDir);
+      await _generateFeatureRepository(category);
     }
   }
 
-  /// Generates repository for a single category.
-  Future<void> _generateCategoryRepository(
-    EndpointCategory category,
-    Directory baseDir,
-  ) async {
-    final categoryName = StringUtils.toSnakeCase(category.name);
-    final categoryDir = Directory('${baseDir.path}/$categoryName');
-    categoryDir.createSync(recursive: true);
+  /// Generates repository for a single feature.
+  Future<void> _generateFeatureRepository(EndpointCategory category) async {
+    final featureName = StringUtils.toSnakeCase(category.name);
+    
+    // Create feature-based structure: lib/features/{feature}/
+    final featureDir = Directory('$outputDir/lib/features/$featureName');
+    featureDir.createSync(recursive: true);
 
-    // Generate abstract class
-    await _generateAbstractClass(category, categoryDir, categoryName);
+    final fileName = '${featureName}_repository';
+    final interfaceName = 'I${category.name}Repository';
+    final implName = '${category.name}Repository';
+    final datasourceInterface = 'I${category.name}DataSource';
 
-    // Generate implementation
-    await _generateImplementation(category, categoryDir, categoryName);
-  }
-
-  /// Generates the abstract repository class.
-  Future<void> _generateAbstractClass(
-    EndpointCategory category,
-    Directory outputDir,
-    String fileName,
-  ) async {
-    final className = '${category.name}Repository';
     final library = Library((b) {
       // Imports
+      b.directives.add(Directive.import('package:$packageName/failure.dart'));
       b.directives.add(Directive.import('package:dartz/dartz.dart'));
       b.directives.add(Directive.import('package:dio/dio.dart'));
-      b.directives.add(Directive.import('package:$packageName/failure.dart'));
+      b.directives.add(Directive.import(
+        'package:$packageName/features/$featureName/${featureName}_datasource.dart',
+      ));
 
-      // Model imports
+      // Model imports - updated path for feature structure
       for (final endpoint in category.endpoints) {
-        if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
+        if (endpoint.hasRequestBody ||
+            endpoint.queryParams.isNotEmpty ||
+            endpoint.pathParams.isNotEmpty) {
           b.directives.add(Directive.import(
-            'package:$packageName/data/models/$fileName/requests/${StringUtils.toSnakeCase(endpoint.name)}_req.dart',
+            'package:$packageName/features/$featureName/models/requests/${StringUtils.toSnakeCase(endpoint.name)}_req.dart',
           ));
         }
         if (endpoint.hasResponseBody) {
           b.directives.add(Directive.import(
-            'package:$packageName/data/models/$fileName/responses/${StringUtils.toSnakeCase(endpoint.name)}_res.dart',
+            'package:$packageName/features/$featureName/models/responses/${StringUtils.toSnakeCase(endpoint.name)}_res.dart',
           ));
         }
       }
 
-      // Abstract class
+      // Interface class (abstract)
       b.body.add(Class((b) {
         b
           ..abstract = true
-          ..name = className;
+          ..name = interfaceName;
 
         for (final endpoint in category.endpoints) {
-          b.methods.add(_buildAbstractMethod(endpoint));
+          b.methods.add(_buildInterfaceMethod(endpoint));
         }
       }));
-    });
-
-    final emitter = DartEmitter();
-    final code = library.accept(emitter).toString();
-    final formatter = DartFormatter();
-
-    final file = File('${outputDir.path}/$fileName.dart');
-    await file.writeAsString(formatter.format(code));
-  }
-
-  /// Generates the implementation class.
-  Future<void> _generateImplementation(
-    EndpointCategory category,
-    Directory outputDir,
-    String fileName,
-  ) async {
-    final abstractClassName = '${category.name}Repository';
-    final implClassName = '${category.name}RepositoryImpl';
-    final datasourceName = '${category.name}DataSource';
-
-    final library = Library((b) {
-      // Imports
-      b.directives.add(Directive.import('package:$packageName/failure.dart'));
-      b.directives.add(Directive.import('package:dartz/dartz.dart'));
-      b.directives.add(Directive.import('package:dio/dio.dart'));
-      b.directives.add(Directive.import('package:$packageName/data/repositories/$fileName/$fileName.dart'));
-      b.directives.add(Directive.import('package:$packageName/data/datasources/$fileName/$fileName.dart'));
-
-      // Model imports
-      for (final endpoint in category.endpoints) {
-        if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
-          b.directives.add(Directive.import(
-            'package:$packageName/data/models/$fileName/requests/${StringUtils.toSnakeCase(endpoint.name)}_req.dart',
-          ));
-        }
-        if (endpoint.hasResponseBody) {
-          b.directives.add(Directive.import(
-            'package:$packageName/data/models/$fileName/responses/${StringUtils.toSnakeCase(endpoint.name)}_res.dart',
-          ));
-        }
-      }
 
       // Implementation class
       b.body.add(Class((b) {
         b
-          ..name = implClassName
-          ..implements.add(refer(abstractClassName));
+          ..name = implName
+          ..implements.add(refer(interfaceName));
 
         // Constructor
         b.constructors.add(Constructor((b) {
@@ -150,7 +102,7 @@ class RepositoryGenerator {
           Field((b) {
             b
               ..name = '_dataSource'
-              ..type = refer(datasourceName)
+              ..type = refer(datasourceInterface)
               ..modifier = FieldModifier.final$;
           }),
           Field((b) {
@@ -172,20 +124,24 @@ class RepositoryGenerator {
     final code = library.accept(emitter).toString();
     final formatter = DartFormatter();
 
-    final file = File('${outputDir.path}/${fileName}_repository_impl.dart');
+    final file = File('${featureDir.path}/$fileName.dart');
     await file.writeAsString(formatter.format(code));
   }
 
-  /// Builds an abstract method definition.
-  Method _buildAbstractMethod(EndpointModel endpoint) {
-    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, ${endpoint.responseClassName}>>' : 'Future<Either<FailureDetails, void>>';
+  /// Builds an interface method definition.
+  Method _buildInterfaceMethod(EndpointModel endpoint) {
+    final returnType = endpoint.hasResponseBody
+        ? 'Future<Either<FailureDetails, ${endpoint.responseClassName}>>'
+        : 'Future<Either<FailureDetails, void>>';
 
     final builder = MethodBuilder()
       ..name = endpoint.methodName
       ..returns = refer(returnType);
 
     // Request parameter
-    if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
+    if (endpoint.hasRequestBody ||
+        endpoint.queryParams.isNotEmpty ||
+        endpoint.pathParams.isNotEmpty) {
       builder.requiredParameters.add(Parameter((b) {
         b
           ..name = 'req'
@@ -194,25 +150,19 @@ class RepositoryGenerator {
     }
 
     // Optional parameters
-    if (endpoint.isDelete) {
-      builder.optionalParameters.addAll([
-        _buildOptionalParam('cancelToken', 'CancelToken?'),
-        _buildOptionalParam('options', 'Options?'),
-      ]);
-    } else {
-      builder.optionalParameters.addAll([
-        _buildOptionalParam('cancelToken', 'CancelToken?'),
-        _buildOptionalParam('onReceiveProgress', 'void Function(int, int)?'),
-        _buildOptionalParam('options', 'Options?'),
-      ]);
-    }
+    builder.optionalParameters.addAll([
+      _buildOptionalParam('cancelToken', 'CancelToken?'),
+      _buildOptionalParam('options', 'Options?'),
+    ]);
 
     return builder.build();
   }
 
   /// Builds an implementation method.
   Method _buildImplementationMethod(EndpointModel endpoint) {
-    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, ${endpoint.responseClassName}>>' : 'Future<Either<FailureDetails, void>>';
+    final returnType = endpoint.hasResponseBody
+        ? 'Future<Either<FailureDetails, ${endpoint.responseClassName}>>'
+        : 'Future<Either<FailureDetails, void>>';
 
     return Method((b) {
       b
@@ -222,7 +172,9 @@ class RepositoryGenerator {
         ..modifier = MethodModifier.async;
 
       // Request parameter
-      if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
+      if (endpoint.hasRequestBody ||
+          endpoint.queryParams.isNotEmpty ||
+          endpoint.pathParams.isNotEmpty) {
         b.requiredParameters.add(Parameter((b) {
           b
             ..name = 'req'
@@ -231,64 +183,43 @@ class RepositoryGenerator {
       }
 
       // Optional parameters
-      if (endpoint.isDelete) {
-        b.optionalParameters.addAll([
-          _buildOptionalParam('cancelToken', 'CancelToken?'),
-          _buildOptionalParam('options', 'Options?'),
-        ]);
-      } else {
-        b.optionalParameters.addAll([
-          _buildOptionalParam('cancelToken', 'CancelToken?'),
-          _buildOptionalParam('onReceiveProgress', 'void Function(int, int)?'),
-          _buildOptionalParam('options', 'Options?'),
-        ]);
-      }
+      b.optionalParameters.addAll([
+        _buildOptionalParam('cancelToken', 'CancelToken?'),
+        _buildOptionalParam('options', 'Options?'),
+      ]);
 
-      // Body with try-catch
-      b.body = Block((b) {
-        b.addExpression(
-          refer('tryCatch<${endpoint.hasResponseBody ? endpoint.responseClassName : 'void'}>')
-              .call([
-                Method((b) {
-                  b
-                    ..modifier = MethodModifier.async
-                    ..body = _buildTryBody(endpoint);
-                }).closure,
-              ])
-              .awaited
-              .returned,
-        );
-      });
+      // Body with inline try-catch
+      b.body = _buildInlineTryCatchBody(endpoint);
     });
   }
 
-  /// Builds the try block body.
-  Code _buildTryBody(EndpointModel endpoint) {
+  /// Builds inline try-catch body.
+  Block _buildInlineTryCatchBody(EndpointModel endpoint) {
     final statements = <Code>[];
 
-    // Call data source
-    final args = <Expression>[];
-    if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
-      args.add(refer('req'));
-    }
+    // Build data source call string
+    final hasReq = endpoint.hasRequestBody ||
+        endpoint.queryParams.isNotEmpty ||
+        endpoint.pathParams.isNotEmpty;
+    final methodCall = '_dataSource.${endpoint.methodName}';
+    final params = hasReq ? 'req' : '';
+    final namedParams = 'cancelToken: cancelToken, options: options';
+    final fullCall = params.isNotEmpty
+        ? '$methodCall($params, $namedParams)'
+        : '$methodCall($namedParams)';
 
-    final namedArgs = <String, Expression>{};
-    if (endpoint.isDelete) {
-      namedArgs['cancelToken'] = refer('cancelToken');
-      namedArgs['options'] = refer('options');
-    } else {
-      namedArgs['cancelToken'] = refer('cancelToken');
-      namedArgs['onReceiveProgress'] = refer('onReceiveProgress');
-      namedArgs['options'] = refer('options');
-    }
-
-    final dataSourceCall = refer('_dataSource').property(endpoint.methodName).call(args, namedArgs).awaited;
-
+    // Build try-catch block
+    statements.add(Code('try {'));
     if (endpoint.hasResponseBody) {
-      statements.add(dataSourceCall.returned.statement);
+      statements.add(Code('  final result = await $fullCall;'));
+      statements.add(Code('  return Right(result);'));
     } else {
-      statements.add(dataSourceCall.statement);
+      statements.add(Code('  await $fullCall;'));
+      statements.add(Code('  return const Right(null);'));
     }
+    statements.add(Code('} catch (e, stackTrace) {'));
+    statements.add(Code('  return Left(_failure.handle(e, stackTrace));'));
+    statements.add(Code('}'));
 
     return Block((b) => b.statements.addAll(statements));
   }

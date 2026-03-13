@@ -1,4 +1,5 @@
 import 'package:args/args.dart';
+import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
 
 /// Configuration options for the generator.
 class GeneratorConfig {
@@ -7,6 +8,7 @@ class GeneratorConfig {
   final String? packageName;
   final bool verbose;
   final bool dryRun;
+  final ArchitectureStyle architectureStyle;
 
   const GeneratorConfig({
     required this.inputPath,
@@ -14,6 +16,7 @@ class GeneratorConfig {
     this.packageName,
     this.verbose = false,
     this.dryRun = false,
+    this.architectureStyle = ArchitectureStyle.featureFirst,
   });
 }
 
@@ -48,6 +51,14 @@ class ArgumentParser {
       help: 'Preview changes without writing files',
       negatable: false,
     )
+    ..addOption(
+      'architecture',
+      abbr: 'a',
+      help: 'Architecture pattern to use',
+      allowed: ArchitectureStyle.values.map((e) => e.cliValue).toList(),
+      defaultsTo: ArchitectureStyle.featureFirst.cliValue,
+      allowedHelp: getArchitectureStyleChoices(),
+    )
     ..addFlag(
       'help',
       abbr: 'h',
@@ -70,6 +81,7 @@ class ArgumentParser {
       packageName: results['name'] as String?,
       verbose: results['verbose'] as bool,
       dryRun: results['dry-run'] as bool,
+      architectureStyle: parseArchitectureStyle(results['architecture'] as String),
     );
   }
 

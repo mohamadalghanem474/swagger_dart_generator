@@ -140,29 +140,7 @@ class FailureGenerator {
           ]);
         }),
 
-        // tryCatch helper function
-        Method((b) {
-          b
-            ..name = 'tryCatch'
-            ..returns = refer('Future<Either<FailureDetails, T>>')
-            ..types.add(refer('T'))
-            ..modifier = MethodModifier.async
-            ..requiredParameters.add(Parameter((b) {
-              b
-                ..name = 'fn'
-                ..type = refer('Future<T> Function()');
-            }))
-            ..body = Block((b) {
-              b.statements.addAll([
-                Code('try {'),
-                Code('  final result = await fn();'),
-                Code('  return Right(result);'),
-                Code('} catch (e, stackTrace) {'),
-                Code('  return Left(DefaultFailure().handle(e, stackTrace));'),
-                Code('}'),
-              ]);
-            });
-        }),
+
       ]);
 
       // Add imports

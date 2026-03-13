@@ -1,15 +1,19 @@
 import 'dart:io';
 
 import 'package:swagger_dart_generator/src/cli/argument_parser.dart';
+import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
 import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
 import 'package:swagger_dart_generator/src/core/swagger_parser.dart';
 import 'package:swagger_dart_generator/src/generators/api/api_generator.dart';
-import 'package:swagger_dart_generator/src/generators/datasource/datasource_generator.dart';
+import 'package:swagger_dart_generator/src/generators/data/datasource_impl_generator.dart';
+import 'package:swagger_dart_generator/src/generators/data/models_generator.dart';
+import 'package:swagger_dart_generator/src/generators/data/repository_impl_generator.dart';
+import 'package:swagger_dart_generator/src/generators/domain/entities_generator.dart';
+import 'package:swagger_dart_generator/src/generators/domain/repository_interface_generator.dart';
+import 'package:swagger_dart_generator/src/generators/domain/usecases_generator.dart';
 import 'package:swagger_dart_generator/src/generators/endpoints/endpoints_generator.dart';
 import 'package:swagger_dart_generator/src/generators/failure/failure_generator.dart';
-import 'package:swagger_dart_generator/src/generators/models/model_generator.dart';
 import 'package:swagger_dart_generator/src/generators/pubspec/pubspec_generator.dart';
-import 'package:swagger_dart_generator/src/generators/repository/repository_generator.dart';
 import 'package:swagger_dart_generator/src/generators/test/test_generator.dart';
 
 /// Runs the code generation process.
@@ -35,6 +39,7 @@ class CliRunner {
     _info('📋 Package name: $packageName');
     _info('📄 Input file: ${config.inputPath}');
     _info('📁 Output directory: ${config.outputDir}');
+    _info('🏗️  Architecture: ${config.architectureStyle.displayName}');
 
     if (config.dryRun) {
       _info('🔍 Dry run mode - no files will be written');
@@ -66,7 +71,7 @@ class CliRunner {
 
     // Generate files
     _info('');
-    _info('🚀 Generating code...');
+    _info('🚀 Generating Clean Architecture code...');
 
     try {
       // Create package structure
@@ -74,64 +79,89 @@ class CliRunner {
 
       // Generate pubspec.yaml
       _verbose('Generating pubspec.yaml...');
-      final pubspecGen = PubspecGenerator(
+      await PubspecGenerator(
         packageName: packageName,
         outputDir: config.outputDir,
-      );
-      await pubspecGen.generate();
+      ).generate();
 
       // Generate endpoints
       _verbose('Generating endpoints...');
-      final endpointsGen = EndpointsGenerator(outputDir: config.outputDir);
-      await endpointsGen.generate(categories);
+      await EndpointsGenerator(outputDir: config.outputDir).generate(categories);
 
       // Generate failure classes
       _verbose('Generating failure classes...');
-      final failureGen = FailureGenerator(outputDir: config.outputDir);
-      await failureGen.generate();
+      await FailureGenerator(outputDir: config.outputDir).generate();
 
-      // Generate models
-      _verbose('Generating models...');
-      final modelGen = ModelGenerator(
+      // DOMAIN LAYER
+      _verbose('Generating domain layer...');
+      
+      // Domain - Entities
+      await EntitiesGenerator(
         outputDir: config.outputDir,
         packageName: packageName,
-      );
-      await modelGen.generate(categories);
+        architectureStyle: config.architectureStyle,
+      ).generate(categories);
 
-      // Generate data sources
-      _verbose('Generating data sources...');
-      final datasourceGen = DatasourceGenerator(
+      // Domain - Repository Interfaces
+      await RepositoryInterfaceGenerator(
         outputDir: config.outputDir,
         packageName: packageName,
-      );
-      await datasourceGen.generate(categories);
+        architectureStyle: config.architectureStyle,
+      ).generate(categories);
 
-      // Generate repositories
-      _verbose('Generating repositories...');
-      final repositoryGen = RepositoryGenerator(
+      // Domain - Use Cases (skip for simple architecture)
+      if (config.architectureStyle.generatesUsecases) {
+        await UsecasesGenerator(
+          outputDir: config.outputDir,
+          packageName: packageName,
+          architectureStyle: config.architectureStyle,
+        ).generate(categories);
+      }
+
+      // DATA LAYER
+      _verbose('Generating data layer...');
+
+      // Data - Models
+      await ModelsGenerator(
         outputDir: config.outputDir,
         packageName: packageName,
-      );
-      await repositoryGen.generate(categories);
+        architectureStyle: config.architectureStyle,
+      ).generate(categories);
 
-      // Generate API class
+      // Data - Datasource Implementations
+      await DatasourceImplGenerator(
+        outputDir: config.outputDir,
+        packageName: packageName,
+        architectureStyle: config.architectureStyle,
+      ).generate(categories);
+
+      // Data - Repository Implementations
+      await RepositoryImplGenerator(
+        outputDir: config.outputDir,
+        packageName: packageName,
+        architectureStyle: config.architectureStyle,
+      ).generate(categories);
+
+      // PRESENTATION/INFRASTRUCTURE LAYER
       _verbose('Generating API class...');
-      final apiGen = ApiGenerator(
+      await ApiGenerator(
         outputDir: config.outputDir,
         packageName: packageName,
-      );
-      await apiGen.generate(categories);
+        architectureStyle: config.architectureStyle,
+      ).generate(categories);
 
       // Generate tests
       _verbose('Generating tests...');
-      final testGen = TestGenerator(
+      await TestGenerator(
         outputDir: config.outputDir,
         packageName: packageName,
-      );
-      await testGen.generate(categories);
+        architectureStyle: config.architectureStyle,
+      ).generate(categories);
 
       _info('');
       _success('✅ Code generation complete!');
+      _info('');
+      _printStructureInfo();
       _info('');
       _info('Next steps:');
       _info('  1. cd ${config.outputDir}');
@@ -150,13 +180,11 @@ class CliRunner {
   Future<void> _createPackageStructure(String packageName) async {
     _verbose('Creating package structure...');
 
-    // Create lib directory
     final libDir = Directory('${config.outputDir}/lib');
     if (!libDir.existsSync()) {
       libDir.createSync(recursive: true);
     }
 
-    // Check if lib already exists and warn
     if (libDir.listSync().isNotEmpty) {
       _warn('Output directory is not empty. Files may be overwritten.');
     }
@@ -166,7 +194,6 @@ class CliRunner {
   String _getPackageName() {
     final dir = Directory(config.outputDir);
     final name = dir.path.split(Platform.pathSeparator).last;
-    // Sanitize for dart package name
     return name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]'), '_');
   }
 
@@ -186,36 +213,60 @@ class CliRunner {
     }
   }
 
-  // Logging helpers
-
   void _printBanner() {
     print('');
     print('╔════════════════════════════════════════════════════════════╗');
     print('║          Swagger Dart Generator v2.0.0                     ║');
-    print('║          Professional Code Generation Tool                 ║');
+    print('║          Configurable Architecture Patterns                ║');
     print('╚════════════════════════════════════════════════════════════╝');
     print('');
   }
 
-  void _info(String message) {
-    print(message);
-  }
-
-  void _success(String message) {
-    print('\x1B[32m$message\x1B[0m');
-  }
-
-  void _warn(String message) {
-    print('\x1B[33m⚠️  $message\x1B[0m');
-  }
-
-  void _error(String message) {
-    print('\x1B[31m❌ $message\x1B[0m');
-  }
-
-  void _verbose(String message) {
-    if (config.verbose) {
-      print('\x1B[90m  $message\x1B[0m');
+  void _printStructureInfo() {
+    switch (config.architectureStyle) {
+      case ArchitectureStyle.featureFirst:
+        _info('📁 Structure: lib/features/{feature}/');
+        _info('   ├── domain/');
+        _info('   │   ├── entities/');
+        _info('   │   ├── repositories/ (interfaces)');
+        _info('   │   └── usecases/');
+        _info('   └── data/');
+        _info('       ├── models/');
+        _info('       ├── datasources/');
+        _info('       └── repositories/ (impl)');
+      case ArchitectureStyle.layerFirst:
+        _info('📁 Structure: lib/');
+        _info('   ├── domain/');
+        _info('   │   ├── entities/');
+        _info('   │   └── repositories/ (interfaces)');
+        _info('   ├── data/');
+        _info('   │   ├── models/');
+        _info('   │   └── repositories/ (impl)');
+        _info('   └── features/{feature}/');
+        _info('       └── usecases/');
+      case ArchitectureStyle.cleanMixed:
+        _info('📁 Structure: lib/');
+        _info('   ├── domain/           # Shared');
+        _info('   │   ├── entities/');
+        _info('   │   └── repositories/ (interfaces)');
+        _info('   └── features/{feature}/');
+        _info('       └── data/');
+        _info('           ├── models/');
+        _info('           ├── datasources/');
+        _info('           └── repositories/ (impl)');
+      case ArchitectureStyle.simple:
+        _info('📁 Structure: lib/');
+        _info('   ├── models/');
+        _info('   ├── repositories/');
+        _info('   └── datasources/');
     }
+  }
+
+  void _info(String message) => print(message);
+  void _success(String message) => print('\x1B[32m$message\x1B[0m');
+  void _warn(String message) => print('\x1B[33m⚠️  $message\x1B[0m');
+  void _error(String message) => print('\x1B[31m❌ $message\x1B[0m');
+  void _verbose(String message) {
+    if (config.verbose) print('\x1B[90m  $message\x1B[0m');
   }
 }

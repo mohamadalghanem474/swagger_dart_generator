@@ -3,63 +3,118 @@ import 'dart:io';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 
+import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
 import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
 import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 
-/// Generates data source classes (interface and implementation in one file).
+/// Generates data source implementations.
 ///
-/// Output structure (Clean Architecture by Feature):
-/// lib/features/{feature}/{feature}_datasource.dart
-class DatasourceGenerator {
+/// Output structure varies by architecture style:
+/// - Feature-First: lib/features/{feature}/data/datasources/
+/// - Layer-First: lib/data/datasources/
+/// - Clean-Mixed: lib/features/{feature}/data/datasources/
+class DatasourceImplGenerator {
   final String outputDir;
   final String packageName;
+  final ArchitectureStyle architectureStyle;
 
-  DatasourceGenerator({
+  DatasourceImplGenerator({
     required this.outputDir,
     required this.packageName,
+    required this.architectureStyle,
   });
 
-  /// Generates all data source files.
   Future<void> generate(List<EndpointCategory> categories) async {
     for (final category in categories) {
       await _generateFeatureDatasource(category);
     }
   }
 
-  /// Generates data source for a single feature.
+  /// Gets the datasource directory path based on architecture style.
+  String _getDatasourcePath(String featureName) {
+    return switch (architectureStyle) {
+      ArchitectureStyle.featureFirst => '$outputDir/lib/features/$featureName/data/datasources',
+      ArchitectureStyle.layerFirst => '$outputDir/lib/data/datasources',
+      ArchitectureStyle.cleanMixed => '$outputDir/lib/features/$featureName/data/datasources',
+      ArchitectureStyle.simple => '$outputDir/lib/datasources',
+    };
+  }
+
+  /// Gets the datasource file name based on architecture style.
+  String _getDatasourceFileName(String featureName) {
+    return switch (architectureStyle) {
+      ArchitectureStyle.featureFirst => '${featureName}_remote_datasource',
+      ArchitectureStyle.layerFirst => '${featureName}_datasource',
+      ArchitectureStyle.cleanMixed => '${featureName}_datasource',
+      ArchitectureStyle.simple => '${featureName}_datasource',
+    };
+  }
+
+  /// Gets the request model import path based on architecture style.
+  String _getRequestImport(String featureName, String endpointName) {
+    final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
+    final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_req.dart';
+    return switch (architectureStyle) {
+      ArchitectureStyle.featureFirst => 
+        'package:$packageName/features/$featureName/data/models/requests/$fileName',
+      ArchitectureStyle.layerFirst => 
+        'package:$packageName/data/models/$featureName/requests/$fileName',
+      ArchitectureStyle.cleanMixed => 
+        'package:$packageName/features/$featureName/data/models/requests/$fileName',
+      ArchitectureStyle.simple => 
+        'package:$packageName/models/requests/$fileName',
+    };
+  }
+
+  /// Gets the response model import path based on architecture style.
+  String _getResponseImport(String featureName, String endpointName) {
+    final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
+    final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_res.dart';
+    return switch (architectureStyle) {
+      ArchitectureStyle.featureFirst => 
+        'package:$packageName/features/$featureName/data/models/responses/$fileName',
+      ArchitectureStyle.layerFirst => 
+        'package:$packageName/data/models/$featureName/responses/$fileName',
+      ArchitectureStyle.cleanMixed => 
+        'package:$packageName/features/$featureName/data/models/responses/$fileName',
+      ArchitectureStyle.simple => 
+        'package:$packageName/models/responses/$fileName',
+    };
+  }
+
   Future<void> _generateFeatureDatasource(EndpointCategory category) async {
     final featureName = StringUtils.toSnakeCase(category.name);
-    
-    // Create feature-based structure: lib/features/{feature}/
-    final featureDir = Directory('$outputDir/lib/features/$featureName');
-    featureDir.createSync(recursive: true);
+    final datasourceDir = Directory(_getDatasourcePath(featureName));
+    datasourceDir.createSync(recursive: true);
 
-    final fileName = '${featureName}_datasource';
+    final fileName = _getDatasourceFileName(featureName);
     final interfaceName = 'I${category.name}DataSource';
-    final implName = '${category.name}RemoteDataSource';
+    final implName = switch (architectureStyle) {
+      ArchitectureStyle.featureFirst => '${category.name}RemoteDataSource',
+      _ => '${category.name}DataSourceImpl',
+    };
 
     final library = Library((b) {
-      // Imports
       b.directives.add(Directive.import('package:dio/dio.dart'));
       b.directives.add(Directive.import('package:$packageName/end_points.dart'));
 
-      // Model imports - updated path for feature structure
+      // Individual model imports
       for (final endpoint in category.endpoints) {
         if (endpoint.hasRequestBody ||
             endpoint.queryParams.isNotEmpty ||
             endpoint.pathParams.isNotEmpty) {
           b.directives.add(Directive.import(
-            'package:$packageName/features/$featureName/models/requests/${StringUtils.toSnakeCase(endpoint.name)}_req.dart',
+            _getRequestImport(featureName, endpoint.name),
           ));
         }
         if (endpoint.hasResponseBody) {
           b.directives.add(Directive.import(
-            'package:$packageName/features/$featureName/models/responses/${StringUtils.toSnakeCase(endpoint.name)}_res.dart',
+            _getResponseImport(featureName, endpoint.name),
           ));
         }
       }
 
-      // Interface class (abstract)
+      // Interface
       b.body.add(Class((b) {
         b
           ..abstract = true
@@ -70,13 +125,12 @@ class DatasourceGenerator {
         }
       }));
 
-      // Implementation class
+      // Implementation
       b.body.add(Class((b) {
         b
           ..name = implName
           ..implements.add(refer(interfaceName));
 
-        // Constructor
         b.constructors.add(Constructor((b) {
           b.requiredParameters.add(Parameter((b) {
             b
@@ -85,7 +139,6 @@ class DatasourceGenerator {
           }));
         }));
 
-        // Field
         b.fields.add(Field((b) {
           b
             ..name = '_dio'
@@ -93,7 +146,6 @@ class DatasourceGenerator {
             ..modifier = FieldModifier.final$;
         }));
 
-        // Methods
         for (final endpoint in category.endpoints) {
           b.methods.add(_buildImplementationMethod(endpoint, category.name));
         }
@@ -104,11 +156,10 @@ class DatasourceGenerator {
     final code = library.accept(emitter).toString();
     final formatter = DartFormatter();
 
-    final file = File('${featureDir.path}/$fileName.dart');
+    final file = File('${datasourceDir.path}/$fileName.dart');
     await file.writeAsString(formatter.format(code));
   }
 
-  /// Builds an interface method definition.
   Method _buildInterfaceMethod(EndpointModel endpoint) {
     final returnType = endpoint.hasResponseBody
         ? 'Future<${endpoint.responseClassName}>'
@@ -118,7 +169,6 @@ class DatasourceGenerator {
       ..name = endpoint.methodName
       ..returns = refer(returnType);
 
-    // Request parameter
     if (endpoint.hasRequestBody ||
         endpoint.queryParams.isNotEmpty ||
         endpoint.pathParams.isNotEmpty) {
@@ -129,7 +179,6 @@ class DatasourceGenerator {
       }));
     }
 
-    // Optional parameters
     builder.optionalParameters.addAll([
       _buildOptionalParam('cancelToken', 'CancelToken?'),
       _buildOptionalParam('options', 'Options?'),
@@ -138,7 +187,6 @@ class DatasourceGenerator {
     return builder.build();
   }
 
-  /// Builds an implementation method.
   Method _buildImplementationMethod(EndpointModel endpoint, String categoryName) {
     final returnType = endpoint.hasResponseBody
         ? 'Future<${endpoint.responseClassName}>'
@@ -151,7 +199,6 @@ class DatasourceGenerator {
         ..annotations.add(refer('override'))
         ..modifier = MethodModifier.async;
 
-      // Request parameter
       if (endpoint.hasRequestBody ||
           endpoint.queryParams.isNotEmpty ||
           endpoint.pathParams.isNotEmpty) {
@@ -162,28 +209,23 @@ class DatasourceGenerator {
         }));
       }
 
-      // Optional parameters
       b.optionalParameters.addAll([
         _buildOptionalParam('cancelToken', 'CancelToken?'),
         _buildOptionalParam('options', 'Options?'),
       ]);
 
-      // Body
       b.body = _buildMethodBody(endpoint, categoryName);
     });
   }
 
-  /// Builds the method body implementation.
   Block _buildMethodBody(EndpointModel endpoint, String categoryName) {
     final statements = <Code>[];
 
-    // Build URL
     final categoryCamel = StringUtils.toLowerCamelCase(categoryName);
     statements.add(
       declareVar('url').assign(refer('EndPoints').property(categoryCamel).property(endpoint.methodName)).statement,
     );
 
-    // Replace path parameters (direct fields on req)
     for (final param in endpoint.pathParams) {
       final fieldName = StringUtils.toLowerCamelCase(param.name);
       statements.add(
@@ -198,17 +240,13 @@ class DatasourceGenerator {
       );
     }
 
-    // Build dio call
     final methodCall = refer('_dio').property(endpoint.method.value);
     final args = <Expression>[refer('url')];
-
-    // Named arguments
     final namedArgs = <String, Expression>{};
 
     if (endpoint.hasRequestBody) {
       namedArgs['data'] = refer('req.toJson()');
     }
-
     if (endpoint.queryParams.isNotEmpty) {
       namedArgs['queryParameters'] = refer('req.toJson()');
     }
@@ -216,7 +254,6 @@ class DatasourceGenerator {
     namedArgs['cancelToken'] = refer('cancelToken');
     namedArgs['options'] = refer('options');
 
-    // Return statement
     if (endpoint.hasResponseBody) {
       statements.add(
         declareFinal('result').assign(methodCall.call(args, namedArgs).awaited).statement,
@@ -231,7 +268,6 @@ class DatasourceGenerator {
     return Block((b) => b.statements.addAll(statements));
   }
 
-  /// Builds an optional parameter.
   Parameter _buildOptionalParam(String name, String type) {
     return Parameter((b) {
       b

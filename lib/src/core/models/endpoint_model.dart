@@ -63,17 +63,47 @@ class EndpointModel extends Equatable {
     this.description,
   });
 
-  /// Gets the request class name (e.g., `LoginReq`).
-  String get requestClassName => '${name}Req';
+  /// Gets the request class name (e.g., `LoginPostRequest`).
+  String get requestClassName {
+    final cleanName = _cleanEndpointName(name);
+    final methodName = method.value[0].toUpperCase() + method.value.substring(1);
+    return '${cleanName}${methodName}Request';
+  }
 
-  /// Gets the response class name (e.g., `LoginRes`).
-  String get responseClassName => '${name}Res';
+  /// Gets the response class name (e.g., `LoginPostResponse`).
+  String get responseClassName {
+    final cleanName = _cleanEndpointName(name);
+    final methodName = method.value[0].toUpperCase() + method.value.substring(1);
+    return '${cleanName}${methodName}Response';
+  }
 
-  /// Gets the method name in camelCase (e.g., `authLogin`).
+  /// Removes method suffix (_post, _get, etc.) and converts to PascalCase.
+  String _cleanEndpointName(String endpointName) {
+    // Remove method suffix (_post, _get, _put, _delete, etc.)
+    final suffixes = ['_post', '_get', '_put', '_delete', '_patch'];
+    var clean = endpointName;
+    for (final suffix in suffixes) {
+      if (clean.toLowerCase().endsWith(suffix)) {
+        clean = clean.substring(0, clean.length - suffix.length);
+        break;
+      }
+    }
+    
+    // Convert to PascalCase
+    return clean.split('_').map((part) {
+      if (part.isEmpty) return '';
+      return part[0].toUpperCase() + part.substring(1);
+    }).join();
+  }
+
+  /// Gets the method name matching the class name pattern (e.g., `getTokenForCustomerApiPost`).
   String get methodName {
-    final parts = name.split('_');
-    if (parts.isEmpty) return name;
-    return parts.first.toLowerCase() + parts.skip(1).map((p) => p[0].toUpperCase() + p.substring(1).toLowerCase()).join();
+    final cleanName = _cleanEndpointName(name);
+    final methodName = method.value[0].toUpperCase() + method.value.substring(1);
+    // Convert first char to lowercase for method name
+    final fullName = '${cleanName}${methodName}';
+    if (fullName.isEmpty) return fullName;
+    return fullName[0].toLowerCase() + fullName.substring(1);
   }
 
   /// Checks if this endpoint has a request body.
