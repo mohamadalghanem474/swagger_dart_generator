@@ -5,9 +5,12 @@ import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
 import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
 import 'package:swagger_dart_generator/src/core/swagger_parser.dart';
 import 'package:swagger_dart_generator/src/generators/api_generator.dart';
+import 'package:swagger_dart_generator/src/generators/auth_generator.dart';
 import 'package:swagger_dart_generator/src/generators/data/datasource_impl_generator.dart';
+import 'package:swagger_dart_generator/src/generators/data/mock_datasource_generator.dart';
 import 'package:swagger_dart_generator/src/generators/data/models/models_generator.dart';
 import 'package:swagger_dart_generator/src/generators/data/repository_impl_generator.dart';
+import 'package:swagger_dart_generator/src/generators/presentation/cubit_generator.dart';
 import 'package:swagger_dart_generator/src/generators/domain/entities_generator.dart';
 import 'package:swagger_dart_generator/src/generators/domain/repository_interface_generator.dart';
 import 'package:swagger_dart_generator/src/generators/domain/usecases_generator.dart';
@@ -24,6 +27,80 @@ class CliRunner {
 
   /// Runs the generator.
   Future<void> run() async {
+    if (config.watch) {
+      await _runWatch();
+    } else {
+      await _runOnce();
+    }
+  }
+
+  /// Runs the generator in interactive mode if no arguments are provided.
+  Future<void> runInteractive() async {
+    _printBanner();
+    _info('👋 Welcome to Swagger Dart Generator Interactive Mode!');
+    _info('Let\'s set up your code generation.\n');
+
+    stdout.write('📄 Enter path to swagger.json (default: swagger.json): ');
+    final input = stdin.readLineSync()?.trim();
+    final inputPath = input?.isEmpty == true ? 'swagger.json' : input!;
+
+    stdout.write('📁 Enter output directory (default: .): ');
+    final output = stdin.readLineSync()?.trim();
+    final outputDir = output?.isEmpty == true ? '.' : output!;
+
+    stdout.write('🏗️ Choose architecture (feature/layer/simple) [default: feature]: ');
+    final arch = stdin.readLineSync()?.trim();
+    final architecture = arch?.isEmpty == true ? 'feature' : arch!;
+
+    stdout.write('🚀 Generate Bloc/Cubit? (y/n) [default: n]: ');
+    final bloc = stdin.readLineSync()?.trim()?.toLowerCase() == 'y';
+
+    _info('\n✅ Configuration saved! Generating code...');
+
+    final newConfig = GeneratorConfig(
+      inputPath: inputPath,
+      outputDir: outputDir,
+      architectureStyle: parseArchitectureStyle(architecture),
+      generateBloc: bloc,
+    );
+
+    final runner = CliRunner(newConfig);
+    await runner._runOnce();
+  }
+
+  Future<void> _runWatch() async {
+    _info('👀 Watch mode enabled. Monitoring ${config.inputPath}...');
+    await _runOnce();
+
+    final file = File(config.inputPath);
+    if (!file.existsSync()) {
+      _error('Input file not found: ${config.inputPath}');
+      return;
+    }
+
+    // Watch for changes
+    await for (final event in file.parent.watch()) {
+      if (event is FileSystemModifyEvent && event.path.endsWith(config.inputPath)) {
+        _info('\n🔄 Change detected in ${config.inputPath}. Re-generating...');
+        try {
+          await _runOnce();
+        } catch (e) {
+          _error('Re-generation failed: $e');
+        }
+      }
+    }
+  }
+
+  Future<void> _runOnce() async {
+    if (config.verbose) {
+      _info('🔧 Configuration:');
+      _info('   Input: ${config.inputPath}');
+      _info('   Output: ${config.outputDir}');
+      _info('   Architecture: ${config.architectureStyle.cliValue}');
+      if (config.typeMappings.isNotEmpty) {
+        _info('   Type Mappings: ${config.typeMappings}');
+      }
+    }
     _printBanner();
 
     // Validate input file
@@ -52,6 +129,7 @@ class CliRunner {
     final parser = SwaggerParser(
       swaggerPath: config.inputPath,
       outputDir: config.outputDir,
+      typeMappings: config.typeMappings,
     );
 
     late final List<EndpointCategory> categories;
@@ -91,6 +169,10 @@ class CliRunner {
       // Generate failure classes
       _verbose('Generating failure classes...');
       await FailureGenerator(outputDir: config.outputDir).generate();
+
+      // Generate auth interceptor
+      _verbose('Generating auth interceptor...');
+      await AuthGenerator(outputDir: config.outputDir).generate();
 
       // DOMAIN LAYER
       _verbose('Generating domain layer...');
@@ -135,12 +217,31 @@ class CliRunner {
         architectureStyle: config.architectureStyle,
       ).generate(categories);
 
+      // Data - Mock Datasources
+      _verbose('Generating mock datasources...');
+      await MockDatasourceGenerator(
+        outputDir: config.outputDir,
+        packageName: packageName,
+        architectureStyle: config.architectureStyle,
+      ).generate(categories);
+
       // Data - Repository Implementations
+      _verbose('Generating repositories...');
       await RepositoryImplGenerator(
         outputDir: config.outputDir,
         packageName: packageName,
         architectureStyle: config.architectureStyle,
       ).generate(categories);
+
+      // PRESENTATION LAYER (Optional)
+      if (config.generateBloc) {
+        _verbose('Generating presentation layer (Cubits)...');
+        await CubitGenerator(
+          outputDir: config.outputDir,
+          packageName: packageName,
+          architectureStyle: config.architectureStyle,
+        ).generate(categories);
+      }
 
       // PRESENTATION/INFRASTRUCTURE LAYER
       _verbose('Generating API class...');

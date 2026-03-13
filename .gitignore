@@ -1,3 +1,17 @@
-.dart_tool
+# Dart
+.dart_tool/
+.packages
+.pub/
+build/
 pubspec.lock
+
+# Node.js / VS Code Extension
+node_modules/
+out/
+bundle/
+*.vsix
+.vscode-test/
+
+# OS
 .DS_Store
+Thumbs.db

@@ -8,10 +8,12 @@ import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 class SwaggerParser {
   final String swaggerPath;
   final String outputDir;
+  final Map<String, String> typeMappings;
 
   SwaggerParser({
     required this.swaggerPath,
     required this.outputDir,
+    this.typeMappings = const {},
   });
 
   /// Parses the Swagger file and returns a list of endpoint categories.
@@ -21,11 +23,36 @@ class SwaggerParser {
       throw FileSystemException('Swagger file not found', swaggerPath);
     }
 
-    final jsonStr = await file.readAsString();
-    final decoded = json.decode(jsonStr);
-    final swagger = _toStringKeyMap(decoded) ?? {};
+    final String jsonStr;
+    try {
+      jsonStr = await file.readAsString();
+    } catch (e) {
+      throw FileSystemException('Failed to read swagger file: $e', swaggerPath);
+    }
 
-    final paths = _toStringKeyMap(swagger['paths']) ?? {};
+    final dynamic decoded;
+    try {
+      decoded = json.decode(jsonStr);
+    } catch (e) {
+      throw FormatException('Invalid JSON format in swagger file: $e');
+    }
+
+    final swagger = _toStringKeyMap(decoded);
+    if (swagger == null) {
+      throw const FormatException('Swagger file must be a JSON object');
+    }
+
+    // Basic OpenAPI/Swagger validation
+    final version = swagger['openapi']?.toString() ?? swagger['swagger']?.toString();
+    if (version == null) {
+      throw const FormatException('Missing OpenAPI/Swagger version. Ensure "openapi" or "swagger" field exists.');
+    }
+
+    final paths = _toStringKeyMap(swagger['paths']);
+    if (paths == null || paths.isEmpty) {
+      throw const FormatException('Swagger file must contain at least one path in "paths" field.');
+    }
+
     final components = _toStringKeyMap(swagger['components']) ?? {};
     final rawSchemas = _toStringKeyMap(components['schemas']) ?? _toStringKeyMap(swagger['definitions']) ?? {};
     final schemas = <String, dynamic>{}..addAll(rawSchemas);
@@ -286,6 +313,14 @@ class SwaggerParser {
     final type = schema['type'] as String?;
     final format = schema['format'] as String?;
     final enumValues = schema['enum'] as List<dynamic>?;
+
+    // Check custom type mappings
+    if (type != null && typeMappings.containsKey(type)) {
+      return typeMappings[type]!;
+    }
+    if (format != null && typeMappings.containsKey(format)) {
+      return typeMappings[format]!;
+    }
 
     if (enumValues != null && enumValues.isNotEmpty) {
       return 'String'; // Enum as String for now

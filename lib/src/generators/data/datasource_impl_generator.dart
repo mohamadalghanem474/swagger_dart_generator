@@ -228,7 +228,13 @@ class DatasourceImplGenerator {
     final namedArgs = <String, Expression>{};
 
     if (endpoint.hasRequestBody) {
-      namedArgs['data'] = refer('req.toJson()');
+      final isMultipart = endpoint.requestBody?.values.any((v) => v == 'file' || v == 'MultipartFile' || (v is List && v.isNotEmpty && (v.first == 'file' || v.first == 'MultipartFile'))) ?? false;
+
+      if (isMultipart) {
+        namedArgs['data'] = refer('FormData').property('fromMap').call([refer('req.toJson()')]);
+      } else {
+        namedArgs['data'] = refer('req.toJson()');
+      }
     }
     if (endpoint.queryParams.isNotEmpty) {
       namedArgs['queryParameters'] = refer('req.toJson()');

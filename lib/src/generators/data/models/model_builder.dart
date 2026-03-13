@@ -65,7 +65,7 @@ class ModelBuilder {
       b
         ..name = className
         ..fields.addAll(fields)
-        ..constructors.add(constructor)
+        ..constructors.addAll([constructor, fromJson])
         ..annotations.add(refer('immutable'));
 
       if (_hasEntity) {
@@ -73,12 +73,12 @@ class ModelBuilder {
         // No need to override props - it's inherited from Entity
         b
           ..extend = refer(entityClassName!)
-          ..methods.addAll([fromJson, toJson, copyWith]);
+          ..methods.addAll([toJson, copyWith]);
       } else {
         // Standalone model extends Equatable directly
         b
           ..extend = refer('Equatable')
-          ..methods.addAll([fromJson, toJson, copyWith, propsGetter, stringifyGetter]);
+          ..methods.addAll([toJson, copyWith, propsGetter, stringifyGetter]);
       }
     });
   }
@@ -93,10 +93,11 @@ class ModelBuilder {
 
     // Standalone mode: define fields here
     return properties.entries.map((entry) {
+      final fieldName = StringUtils.toLowerCamelCase(entry.key);
       final fieldType = _inferType(entry.key, entry.value);
       return Field((b) {
         b
-          ..name = entry.key
+          ..name = fieldName
           ..type = refer(fieldType)
           ..modifier = FieldModifier.final$;
       });
@@ -111,7 +112,7 @@ class ModelBuilder {
       b.constant = true;
 
       for (final entry in properties.entries) {
-        final fieldName = entry.key;
+        final fieldName = StringUtils.toLowerCamelCase(entry.key);
 
         b.optionalParameters.add(Parameter((b) {
           b
@@ -125,12 +126,11 @@ class ModelBuilder {
   }
 
   /// Builds the fromJson factory constructor.
-  Method _buildFromJson() {
-    return Method((b) {
+  Constructor _buildFromJson() {
+    return Constructor((b) {
       b
         ..name = 'fromJson'
-        ..returns = refer(className)
-        ..static = true
+        ..factory = true
         ..requiredParameters.add(Parameter((b) {
           b
             ..name = 'json'
@@ -139,10 +139,10 @@ class ModelBuilder {
         ..body = Block((b) {
           final constructorArgs = <String, Expression>{};
           for (final entry in properties.entries) {
-            final fieldName = entry.key;
-            final fieldType = _inferType(fieldName, entry.value);
+            final fieldName = StringUtils.toLowerCamelCase(entry.key);
+            final fieldType = _inferType(entry.key, entry.value);
 
-            constructorArgs[fieldName] = _buildFieldFromJson(fieldName, fieldType);
+            constructorArgs[fieldName] = _buildFieldFromJson(entry.key, fieldType);
           }
 
           b.addExpression(
@@ -162,10 +162,10 @@ class ModelBuilder {
           final mapEntries = <Expression, Expression>{};
 
           for (final entry in properties.entries) {
-            final fieldName = entry.key;
-            final fieldType = _inferType(fieldName, entry.value);
+            final fieldName = StringUtils.toLowerCamelCase(entry.key);
+            final fieldType = _inferType(entry.key, entry.value);
 
-            final key = literalString(fieldName);
+            final key = literalString(entry.key);
             final value = _buildFieldToJson(fieldName, fieldType);
 
             mapEntries[key] = value;
@@ -188,7 +188,7 @@ class ModelBuilder {
           final args = <String, Expression>{};
 
           for (final entry in properties.entries) {
-            final fieldName = entry.key;
+            final fieldName = StringUtils.toLowerCamelCase(entry.key);
             args[fieldName] = refer(fieldName).ifNullThen(refer('this.$fieldName'));
           }
 
@@ -199,8 +199,8 @@ class ModelBuilder {
 
       // Add optional parameters
       for (final entry in properties.entries) {
-        final fieldName = entry.key;
-        final fieldType = _inferType(fieldName, entry.value);
+        final fieldName = StringUtils.toLowerCamelCase(entry.key);
+        final fieldType = _inferType(entry.key, entry.value);
         final baseType = fieldType.replaceAll('?', '');
 
         b.optionalParameters.add(Parameter((b) {
@@ -222,7 +222,7 @@ class ModelBuilder {
         ..type = MethodType.getter
         ..annotations.add(refer('override'))
         ..body = Block((b) {
-          final fieldList = properties.keys.map((name) => refer(name)).toList();
+          final fieldList = properties.keys.map((name) => refer(StringUtils.toLowerCamelCase(name))).toList();
           b.addExpression(literalList(fieldList).returned);
         });
     });
@@ -274,6 +274,8 @@ class ModelBuilder {
       case 'DateTime':
         final parsed = refer('DateTime').property('tryParse').call([expression.property('toString').call([])]);
         return isNullable ? parsed : parsed.ifNullThen(refer('DateTime').property('now').call([]));
+      case 'MultipartFile':
+        return expression.asA(refer('MultipartFile'));
       case 'List<dynamic>':
         return expression.asA(refer('List<dynamic>'));
       case 'Map<String, dynamic>':
@@ -300,6 +302,14 @@ class ModelBuilder {
     if (value == null) return 'dynamic?';
 
     if (value is String) {
+      final lowerValue = value.toLowerCase();
+      if (lowerValue == 'int' || lowerValue == 'integer') return 'int?';
+      if (lowerValue == 'double' || lowerValue == 'number' || lowerValue == 'float') return 'double?';
+      if (lowerValue == 'bool' || lowerValue == 'boolean') return 'bool?';
+      if (lowerValue == 'string') return 'String?';
+      if (lowerValue == 'datetime') return 'DateTime?';
+      if (lowerValue == 'file' || lowerValue == 'multipartfile') return 'MultipartFile?';
+
       if (name.toLowerCase().contains('date') || name.toLowerCase().contains('time')) {
         return 'DateTime?';
       }

@@ -1,0 +1,99 @@
+{
+  "name": "swagger-dart-generator-vscode",
+  "displayName": "Swagger Dart Generator",
+  "description": "Professional Clean Architecture code generator for Flutter from Swagger/OpenAPI.",
+  "version": "1.0.0",
+  "publisher": "mohamad-alghanem",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mohamadalghanem474/swagger_dart_generator"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "swagger-dart-generator-sidebar",
+          "title": "Swagger Dart",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "swagger-dart-generator-sidebar": [
+        {
+          "type": "webview",
+          "id": "swagger-dart-generator-view",
+          "name": "Generator Dashboard"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "swagger-dart-generator.open-ui",
+        "title": "Swagger Dart: Open Dashboard",
+        "category": "Swagger Dart"
+      },
+      {
+        "command": "swagger-dart-generator.generate",
+        "title": "Swagger Dart: Generate Code",
+        "category": "Swagger Dart"
+      },
+      {
+        "command": "swagger-dart-generator.watch",
+        "title": "Swagger Dart: Start Watch Mode",
+        "category": "Swagger Dart"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "when": "resourceExtname == .json",
+          "command": "swagger-dart-generator.generate",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Swagger Dart Generator",
+      "properties": {
+        "swagger-dart-generator.executablePath": {
+          "type": "string",
+          "default": "swagger_dart_generator",
+          "description": "Path to the swagger_dart_generator executable."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run bundle-generator && npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "bundle-generator": "rm -rf bundle/* && mkdir -p bundle && cp -r bin lib pubspec.yaml bundle/",
+    "postinstall": "npm run bundle-generator && cd bundle && dart pub get",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.75.0",
+    "@types/glob": "^8.0.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "eslint": "^8.28.0",
+    "glob": "^8.0.3",
+    "mocha": "^10.1.0",
+    "typescript": "^4.9.3",
+    "@vscode/test-electron": "^2.2.0"
+  }
+}

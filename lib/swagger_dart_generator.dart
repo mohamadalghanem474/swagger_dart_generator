@@ -35,6 +35,7 @@ export 'src/core/swagger_parser.dart';
 
 // Generator exports
 export 'src/generators/api_generator.dart';
+export 'src/generators/auth_generator.dart';
 export 'src/generators/data/datasource_impl_generator.dart';
 export 'src/generators/data/models/models_generator.dart';
 export 'src/generators/data/repository_impl_generator.dart';

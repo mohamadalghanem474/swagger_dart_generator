@@ -27,6 +27,7 @@ class ApiGenerator {
       b.directives.add(Directive.import('package:dio/dio.dart'));
       b.directives.add(Directive.import('package:get_it/get_it.dart'));
       b.directives.add(Directive.import('package:$packageName/failure.dart'));
+      b.directives.add(Directive.import('package:$packageName/core/auth_interceptor.dart'));
 
       for (final category in categories) {
         final featureName = StringUtils.toSnakeCase(category.name);
@@ -110,15 +111,32 @@ class ApiGenerator {
               ..name = 'dio'
               ..type = refer('Dio');
           }))
-          ..optionalParameters.add(Parameter((b) {
-            b
-              ..name = 'failure'
-              ..named = true
-              ..type = refer('Failure')
-              ..defaultTo = refer('const DefaultFailure()').code;
-          }))
+          ..optionalParameters.addAll([
+            Parameter((b) {
+              b
+                ..name = 'interceptors'
+                ..named = true
+                ..type = refer('List<Interceptor>?');
+            }),
+            Parameter((b) {
+              b
+                ..name = 'token'
+                ..named = true
+                ..type = refer('String?');
+            }),
+            Parameter((b) {
+              b
+                ..name = 'failure'
+                ..named = true
+                ..type = refer('Failure')
+                ..defaultTo = refer('const DefaultFailure()').code;
+            }),
+          ])
           ..body = Block((b) {
-            b.addExpression(refer('${className}DI').property('init').call([refer('dio'), refer('failure')]));
+            b.addExpression(refer('${className}DI').property('init').call([refer('dio'), refer('failure')], {
+              'token': refer('token'),
+              'interceptors': refer('interceptors'),
+            }));
             b.addExpression(
               refer('$className._internal').call([]).returned,
             );
@@ -163,7 +181,28 @@ class ApiGenerator {
                 ..type = refer('Failure');
             }),
           ])
+          ..optionalParameters.addAll([
+            Parameter((b) {
+              b
+                ..name = 'token'
+                ..named = true
+                ..type = refer('String?');
+            }),
+            Parameter((b) {
+              b
+                ..name = 'interceptors'
+                ..named = true
+                ..type = refer('List<Interceptor>?');
+            }),
+          ])
           ..body = Block((b) {
+            b.statements.add(
+              refer('if (token != null) { dio.interceptors.add(AuthInterceptor.bearer(token)); }').code,
+            );
+            b.statements.add(
+              refer('if (interceptors != null) { dio.interceptors.addAll(interceptors); }').code,
+            );
+
             b.addExpression(
               refer('_getIt').property('registerLazySingleton<Dio>').call([
                 Method((b) {

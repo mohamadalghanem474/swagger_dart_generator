@@ -1,0 +1,28 @@
+# Source files
+src/
+tsconfig.json
+package-lock.json
+
+# Development tools
+.vscode/
+.vscode-test/
+.gitignore
+.pubignore
+AGENTS.md
+COMMANDS.md
+ROADMAP.md
+
+# Dart
+.dart_tool/
+bundle/.dart_tool/
+.packages
+.pub/
+build/
+pubspec.lock
+test/
+bin/
+lib/
+pubspec.yaml
+
+# Mac OS files
+.DS_Store

@@ -10,7 +10,9 @@ class StringUtils {
   /// Example: `auth_login` → `AuthLogin`
   static String toPascalCase(String input) {
     if (input.isEmpty) return '';
-    return input.split(RegExp(r'[_\-\s]+')).where((word) => word.isNotEmpty).map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase()).join();
+    // Handle camelCase or PascalCase inputs by inserting underscores before capitals
+    final snake = toSnakeCase(input);
+    return snake.split(RegExp(r'[_\-\s]+')).where((word) => word.isNotEmpty).map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase()).join();
   }
 
   /// Converts a string to lowerCamelCase.
