@@ -10,8 +10,9 @@ import '../../utils/string_utils.dart';
 /// Generates data source implementations.
 ///
 /// Output structure varies by architecture style:
-/// - feature: lib/features/{feature}/data/datasources/
-/// - layer: lib/data/datasources/
+/// - Feature-First: lib/features/{feature}/data/datasources/
+/// - Layer-First: lib/data/datasources/
+/// - Simple: lib/datasources/
 class DatasourceImplGenerator {
   final String outputDir;
   final String packageName;
@@ -29,7 +30,7 @@ class DatasourceImplGenerator {
     }
   }
 
-  /// Gets the datasource directory path based on architecture style.
+  /// Gets the datasources directory path based on architecture style.
   String _getDatasourcePath(String featureName) {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => '$outputDir/lib/features/$featureName/data/datasources',
@@ -38,27 +39,19 @@ class DatasourceImplGenerator {
     };
   }
 
-  /// Gets the datasource file name based on architecture style.
-  String _getDatasourceFileName(String featureName) {
-    return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => '${featureName}_remote_datasource',
-      ArchitectureStyle.layerFirst => '${featureName}_datasource',
-      ArchitectureStyle.simple => '${featureName}_datasource',
-    };
-  }
-
   /// Gets the request model import path based on architecture style.
   /// For clean architecture, requests are in usecases. For simple, they're in models.
   String _getRequestImport(String featureName, String endpointName) {
     final fileName = '${StringUtils.toSnakeCase(endpointName)}_usecase.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst =>
+      ArchitectureStyle.featureFirst => 
         // Request is in the usecase file
         'package:$packageName/features/$featureName/domain/usecases/$fileName',
-      ArchitectureStyle.layerFirst =>
+      ArchitectureStyle.layerFirst => 
         // Request is in the usecase file
         'package:$packageName/domain/usecases/$featureName/$fileName',
-      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/${featureName}_${StringUtils.toSnakeCase(endpointName)}_req.dart',
+      ArchitectureStyle.simple => 
+        'package:$packageName/models/$featureName/requests/${featureName}_${StringUtils.toSnakeCase(endpointName)}_req.dart',
     };
   }
 
@@ -78,7 +71,10 @@ class DatasourceImplGenerator {
     final datasourceDir = Directory(_getDatasourcePath(featureName));
     datasourceDir.createSync(recursive: true);
 
-    final fileName = _getDatasourceFileName(featureName);
+    final fileName = switch (architectureStyle) {
+      ArchitectureStyle.featureFirst => '${featureName}_remote_datasource',
+      _ => '${featureName}_datasource',
+    };
     final interfaceName = 'I${category.name}DataSource';
     final implName = switch (architectureStyle) {
       ArchitectureStyle.featureFirst => '${category.name}RemoteDataSource',
@@ -90,16 +86,22 @@ class DatasourceImplGenerator {
       b.directives.add(Directive.import('package:dio/dio.dart'));
       b.directives.add(Directive.import('package:$packageName/end_points.dart'));
 
-      // Individual model imports
+      // Interface is in the same file, no import needed
+
+      // Individual response imports
+      for (final endpoint in category.endpoints) {
+        if (endpoint.hasResponseBody) {
+          b.directives.add(Directive.import(
+            _getResponseImport(featureName, endpoint.name),
+          ));
+        }
+      }
+
+      // Individual request imports
       for (final endpoint in category.endpoints) {
         if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
           b.directives.add(Directive.import(
             _getRequestImport(featureName, endpoint.name),
-          ));
-        }
-        if (endpoint.hasResponseBody) {
-          b.directives.add(Directive.import(
-            _getResponseImport(featureName, endpoint.name),
           ));
         }
       }
@@ -205,21 +207,27 @@ class DatasourceImplGenerator {
 
     final categoryCamel = StringUtils.toLowerCamelCase(categoryName);
     final safeCategoryName = categoryCamel == 'default' ? 'defaultEndpoints' : categoryCamel;
-    statements.add(
-      declareVar('url').assign(refer('EndPoints').property(safeCategoryName).property(endpoint.methodName)).statement,
-    );
-
-    for (final param in endpoint.pathParams) {
-      final fieldName = StringUtils.toLowerCamelCase(param.name);
+    
+    // Build URL
+    if (endpoint.pathParams.isEmpty) {
       statements.add(
-        refer('url')
-            .assign(
-              refer('url').property('replaceAll').call([
-                literalString('{${param.name}}'),
-                refer("req.$fieldName?.toString() ?? (throw ArgumentError('${param.name} cannot be null'))"),
-              ]),
-            )
-            .statement,
+        declareFinal('url').assign(refer('EndPoints').property(safeCategoryName).property(endpoint.methodName)).statement,
+      );
+    } else {
+      // Build the URL by directly interpolating path parameters
+      // Instead of: url.replaceAll('{id}', req.id?.toString() ?? '...')
+      // We use: '${baseUrl}/${req.id}'
+      
+      final baseUrlRef = 'EndPoints.${safeCategoryName}.${endpoint.methodName}';
+      final paramInterpolations = endpoint.pathParams.map((param) {
+        final fieldName = StringUtils.toLowerCamelCase(param.name);
+        return "\${req.${fieldName} ?? (throw ArgumentError('${param.name} cannot be null'))}";
+      }).join('/');
+      
+      final urlCode = "'\${${baseUrlRef}}/$paramInterpolations'";
+      
+      statements.add(
+        declareFinal('url').assign(CodeExpression(Code(urlCode))).statement,
       );
     }
 
@@ -259,6 +267,8 @@ class DatasourceImplGenerator {
             .returned
             .statement,
       );
+    } else {
+      statements.add(methodCall.call(args, namedArgs).awaited.statement);
     }
 
     return Block((b) => b.statements.addAll(statements));
