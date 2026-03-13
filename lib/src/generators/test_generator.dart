@@ -7,7 +7,7 @@ import '../core/models/architecture_style.dart';
 import '../core/models/endpoint_model.dart';
 import '../utils/string_utils.dart';
 
-/// Generates integration test templates.
+/// Generates integration test templates organized by architecture style.
 class TestGenerator {
   final String outputDir;
   final String packageName;
@@ -19,43 +19,43 @@ class TestGenerator {
     required this.architectureStyle,
   });
 
-  /// Generates test files for all features.
+  /// Generates test files for all features organized by architecture.
   Future<void> generate(List<EndpointCategory> categories) async {
-    final testDir = Directory('$outputDir/test');
-    if (!testDir.existsSync()) {
-      testDir.createSync(recursive: true);
-    }
-
     for (final category in categories) {
-      await _generateFeatureTest(category, testDir);
+      await _generateFeatureTest(category);
     }
   }
 
-  /// Gets the repository import path based on architecture style.
-  // String _getRepositoryImport(String featureName) {
-  //   return switch (architectureStyle) {
-  //     ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/domain/repositories/${featureName}_repository.dart',
-  //     ArchitectureStyle.layerFirst => 'package:$packageName/domain/repositories/${featureName}_repository.dart',
-  //     ArchitectureStyle.simple => 'package:$packageName/repositories/${featureName}_repository.dart',
-  //   };
-  // }
+  /// Gets the test directory path based on architecture style.
+  String _getTestPath(String featureName) {
+    return switch (architectureStyle) {
+      ArchitectureStyle.featureFirst => '$outputDir/test/features/$featureName',
+      ArchitectureStyle.layerFirst => '$outputDir/test/domain/usecases/$featureName',
+      ArchitectureStyle.simple => '$outputDir/test/repositories',
+    };
+  }
 
   /// Gets the request model import path based on architecture style.
-  /// For clean architecture, requests are in usecases. For simple, they're in models.
   String _getRequestImport(String featureName, String endpointName) {
     final fileName = '${StringUtils.toSnakeCase(endpointName)}_usecase.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/domain/usecases/$fileName',
-      ArchitectureStyle.layerFirst => 'package:$packageName/domain/usecases/$featureName/$fileName',
-      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/${featureName}_${StringUtils.toSnakeCase(endpointName)}_req.dart',
+      ArchitectureStyle.featureFirst => 
+        'package:$packageName/features/$featureName/domain/usecases/$fileName',
+      ArchitectureStyle.layerFirst => 
+        'package:$packageName/domain/usecases/$featureName/$fileName',
+      ArchitectureStyle.simple => 
+        'package:$packageName/models/$featureName/requests/${featureName}_${StringUtils.toSnakeCase(endpointName)}_req.dart',
     };
   }
 
   Future<void> _generateFeatureTest(
     EndpointCategory category,
-    Directory testDir,
   ) async {
     final featureName = StringUtils.toSnakeCase(category.name);
+    final testPath = _getTestPath(featureName);
+    final testDir = Directory(testPath);
+    testDir.createSync(recursive: true);
+
     final fileName = '${featureName}_test.dart';
 
     final library = Library((b) {
@@ -63,7 +63,6 @@ class TestGenerator {
       b.directives.add(Directive.import('package:test/test.dart'));
       b.directives.add(Directive.import('package:$packageName/$packageName.dart'));
       b.directives.add(Directive.import('package:$packageName/failure.dart'));
-      //  b.directives.add(Directive.import(_getRepositoryImport(featureName)));
 
       for (final endpoint in category.endpoints) {
         if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {

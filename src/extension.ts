@@ -160,6 +160,14 @@ class GeneratorPanel {
 					case 'generate':
 						runGeneration(this._context, message.config.inputPath, message.config);
 						return;
+					case 'scanProject':
+						const models = await scanProjectModels();
+						this._panel.webview.postMessage({ command: 'projectScanned', models });
+						return;
+					case 'updateModel':
+						await updateModelFile(message.model);
+						vscode.window.showInformationMessage(`Model ${message.model.name} updated successfully!`);
+						return;
 				}
 			},
 			null,
@@ -345,204 +353,66 @@ class SwaggerSidebarProvider implements vscode.WebviewViewProvider {
             font-size: 13px;
         }
 
-        .ff-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .header-section {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .header-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text-main);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .header-subtitle {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 16px;
+        .ff-container { display: flex; flex-direction: column; gap: 20px; }
+        .header-section { display: flex; flex-direction: column; gap: 4px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
+        .header-title { font-size: 18px; font-weight: 700; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 8px; }
+        .header-subtitle { font-size: 12px; color: var(--text-secondary); }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 10px; }
+        .tab { 
+            padding: 8px 16px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            background: var(--card-bg); 
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        .section-title {
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--secondary-color);
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 12px;
-            font-weight: 500;
             color: var(--text-secondary);
         }
-
-        .input-wrapper {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        input[type="text"], select {
-            width: 100%;
-            padding: 12px;
-            background: var(--input-bg);
-            color: var(--text-main);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 13px;
-            transition: border-color 0.3s, box-shadow 0.3s;
-            outline: none;
-        }
-
-        input:focus, select:focus {
+        .tab.active { 
+            background: var(--primary-color); 
+            color: white; 
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(75, 57, 239, 0.2);
         }
 
-        .btn {
-            cursor: pointer;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            border: none;
-            width: 100%;
-        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-            box-shadow: 0 4px 12px rgba(75, 57, 239, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(75, 57, 239, 0.4);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--text-main);
-            border: 2px solid var(--border-color);
-            margin-top: 4px;
-        }
-
-        .btn-secondary:hover {
-            background: var(--border-color);
-        }
-
-        .switch-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px;
-            background: var(--input-bg);
-            border-radius: 8px;
-            border: 2px solid var(--border-color);
-        }
-
-        .switch-label {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .switch-title {
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .switch-desc {
-            font-size: 11px;
-            color: var(--text-secondary);
-        }
-
-        /* Toggle Switch Style */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-        }
-
+        .card { background: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--secondary-color); margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+        input[type="text"], select { width: 100%; padding: 12px; background: var(--input-bg); color: var(--text-main); border: 2px solid var(--border-color); border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box; }
+        
+        .btn { cursor: pointer; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; width: 100%; }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-secondary { background: transparent; color: var(--text-main); border: 2px solid var(--border-color); margin-top: 4px; }
+        
+        .switch-container { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--input-bg); border-radius: 8px; border: 2px solid var(--border-color); }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: var(--border-color);
-            transition: .4s;
-            border-radius: 24px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px; width: 18px;
-            left: 3px; bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border-color); transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--secondary-color); }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        .badge {
-            background: rgba(57, 210, 192, 0.1);
-            color: var(--secondary-color);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 700;
+        /* Project Explorer Styles */
+        .model-list { display: flex; flex-direction: column; gap: 10px; }
+        .model-item { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; cursor: pointer; transition: 0.3s; }
+        .model-item:hover { border-color: var(--primary-color); }
+        .model-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .model-name { font-weight: 700; color: var(--secondary-color); }
+        .prop-list { font-size: 11px; color: var(--text-secondary); }
+        
+        .editor-modal { 
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(0,0,0,0.8); display: none; padding: 20px;
+            z-index: 100; overflow-y: auto;
         }
-
-        .footer {
-            margin-top: 12px;
-            padding: 16px;
-            text-align: center;
-            font-size: 11px;
-            color: var(--text-secondary);
-            border-top: 1px solid var(--border-color);
-        }
-
+        .modal-content { background: var(--card-bg); border-radius: 12px; padding: 20px; border: 1px solid var(--border-color); }
+        .prop-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        
+        .badge { background: rgba(57, 210, 192, 0.1); color: var(--secondary-color); padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; }
+        .footer { margin-top: 12px; padding: 16px; text-align: center; font-size: 11px; color: var(--text-secondary); border-top: 1px solid var(--border-color); }
         .icon { width: 16px; height: 16px; fill: currentColor; }
     </style>
 </head>
@@ -554,67 +424,91 @@ class SwaggerSidebarProvider implements vscode.WebviewViewProvider {
                 Swagger Engine
                 <span class="badge">v2.0.0</span>
             </h1>
-            <p class="header-subtitle">Professional Clean Architecture Generator</p>
         </div>
 
-        <div class="card">
-            <div class="section-title">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Configuration
-            </div>
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('generate-tab')">Generator</div>
+            <div class="tab" onclick="showTab('explorer-tab'); scanProject()">Visual Editor</div>
+        </div>
 
-            <div class="form-group">
-                <label>Swagger Source</label>
-                <div class="input-wrapper">
-                    <input type="text" id="inputPath" placeholder="swagger.json path">
-                    <button class="btn btn-secondary" onclick="selectFile()">
-                        <svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                        Browse File
-                    </button>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Output Directory</label>
-                <input type="text" id="outputDir" value="${workspaceFolder.replace(/\\/g, '\\\\')}" placeholder="Project root">
-            </div>
-
-            <div class="form-group">
-                <label>Architecture Style</label>
-                <select id="architecture">
-                    <option value="feature">Feature-First (Clean)</option>
-                    <option value="layer">Layer-First</option>
-                    <option value="simple">Simple Modular</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <div class="switch-container">
-                    <div class="switch-label">
-                        <span class="switch-title">Generate State</span>
-                        <span class="switch-desc">Bloc, Cubit & Providers</span>
+        <!-- GENERATOR TAB -->
+        <div id="generate-tab" class="tab-content active">
+            <div class="card">
+                <div class="section-title">Configuration</div>
+                <div class="form-group">
+                    <label>Swagger Source</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="inputPath" placeholder="swagger.json path">
+                        <button class="btn btn-secondary" onclick="selectFile()">Browse</button>
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" id="generateBloc">
-                        <span class="slider"></span>
-                    </label>
                 </div>
+                <div class="form-group">
+                    <label>Output Directory</label>
+                    <input type="text" id="outputDir" value="${workspaceFolder.replace(/\\/g, '\\\\')}" placeholder="Project root">
+                </div>
+                <div class="form-group">
+                    <label>Architecture Style</label>
+                    <select id="architecture">
+                        <option value="feature">Feature-First (Clean)</option>
+                        <option value="layer">Layer-First</option>
+                        <option value="simple">Simple Modular</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <div class="switch-container">
+                        <div class="switch-label">
+                            <span class="switch-title">Generate State</span>
+                            <span class="switch-desc">Bloc, Cubit & Providers</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="generateBloc">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="generate()">🚀 Generate Code</button>
             </div>
-
-            <button class="btn btn-primary" onclick="generate()">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                Generate Code
-            </button>
         </div>
 
-        <div class="footer">
-            Design inspired by FlutterFlow • Built for Professionals
+        <!-- EXPLORER TAB -->
+        <div id="explorer-tab" class="tab-content">
+            <div class="card">
+                <div class="section-title">Visual Project Explorer</div>
+                <div id="modelList" class="model-list">
+                    <p style="text-align:center; color:var(--text-secondary)">Scanning lib/ for Models...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">Design inspired by FlutterFlow</div>
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div id="editModal" class="editor-modal">
+        <div class="modal-content">
+            <h2 id="modalTitle" style="margin-top:0">Edit Model</h2>
+            <div id="propertiesContainer"></div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn btn-primary" onclick="saveModel()">Apply Changes</button>
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            </div>
         </div>
     </div>
 
     <script>
         const vscode = acquireVsCodeApi();
+        let currentModels = [];
+        let editingModel = null;
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
         function selectFile() { vscode.postMessage({ command: 'selectFile' }); }
+        
         function generate() {
             const config = {
                 inputPath: document.getElementById('inputPath').value,
@@ -624,15 +518,134 @@ class SwaggerSidebarProvider implements vscode.WebviewViewProvider {
             };
             vscode.postMessage({ command: 'generate', config });
         }
+
+        function scanProject() { vscode.postMessage({ command: 'scanProject' }); }
+
+        function renderModels(models) {
+            currentModels = models;
+            const container = document.getElementById('modelList');
+            if (models.length === 0) {
+                container.innerHTML = '<p style="text-align:center">No Models/Entities found in lib/.</p>';
+                return;
+            }
+            container.innerHTML = models.map((m, i) => \`
+                <div class="model-item" onclick="openEditor(\${i})">
+                    <div class="model-header">
+                        <span class="model-name">\${m.name}</span>
+                        <span class="badge">\${m.properties.length} Props</span>
+                    </div>
+                    <div class="prop-list">
+                        \${m.properties.slice(0, 3).map(p => p.name).join(', ')}\${m.properties.length > 3 ? '...' : ''}
+                    </div>
+                </div>
+            \`).join('');
+        }
+
+        function openEditor(index) {
+            editingModel = JSON.parse(JSON.stringify(currentModels[index]));
+            document.getElementById('modalTitle').innerText = 'Edit ' + editingModel.name;
+            renderProperties();
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function renderProperties() {
+            const container = document.getElementById('propertiesContainer');
+            container.innerHTML = editingModel.properties.map((p, i) => \`
+                <div class="prop-row">
+                    <input type="text" value="\${p.type}" onchange="updateProp(\${i}, 'type', this.value)" style="flex:1">
+                    <input type="text" value="\${p.name}" onchange="updateProp(\${i}, 'name', this.value)" style="flex:1">
+                    <button class="btn btn-secondary" onclick="removeProp(\${i})" style="width:40px; margin:0">×</button>
+                </div>
+            \`).join('') + \`<button class="btn btn-secondary" onclick="addProp()">+ Add Property</button>\`;
+        }
+
+        function updateProp(i, key, val) { editingModel.properties[i][key] = val; }
+        function removeProp(i) { editingModel.properties.splice(i, 1); renderProperties(); }
+        function addProp() { editingModel.properties.push({ type: 'String', name: 'newProperty' }); renderProperties(); }
+
+        function saveModel() {
+            vscode.postMessage({ command: 'updateModel', model: editingModel });
+            closeModal();
+        }
+
+        function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+
         window.addEventListener('message', event => {
-            if (event.data.command === 'fileSelected') {
-                document.getElementById('inputPath').value = event.data.path;
+            const message = event.data;
+            switch (message.command) {
+                case 'fileSelected':
+                    document.getElementById('inputPath').value = message.path;
+                    break;
+                case 'projectScanned':
+                    renderModels(message.models);
+                    break;
             }
         });
     </script>
 </body>
 </html>`;
 	}
+}
+
+async function scanProjectModels() {
+	const workspaceFolders = vscode.workspace.workspaceFolders;
+	if (!workspaceFolders) return [];
+
+	const models: any[] = [];
+	const files = await vscode.workspace.findFiles('lib/**/*.dart', '**/generated/**');
+
+	for (const file of files) {
+		const document = await vscode.workspace.openTextDocument(file);
+		const content = document.getText();
+		
+		// Simple regex to find classes that look like models/entities
+		const classMatch = content.match(/class\s+(\w+)(?:\s+extends\s+\w+)?\s*{/);
+		if (classMatch) {
+			const className = classMatch[1];
+			if (className.endsWith('Model') || className.endsWith('Entity')) {
+				const properties: any[] = [];
+				const propRegex = /final\s+([\w\?<>]+)\s+(\w+);/g;
+				let propMatch;
+				while ((propMatch = propRegex.exec(content)) !== null) {
+					properties.push({ type: propMatch[1], name: propMatch[2] });
+				}
+				models.push({ name: className, path: file.fsPath, properties });
+			}
+		}
+	}
+	return models;
+}
+
+async function updateModelFile(model: any) {
+	const document = await vscode.workspace.openTextDocument(model.path);
+	const content = document.getText();
+	
+	let newContent = content;
+	// Update properties logic (simplified for demo)
+	let propertiesString = '';
+	for (const prop of model.properties) {
+		propertiesString += `  final ${prop.type} ${prop.name};\n`;
+	}
+
+	const edit = new vscode.WorkspaceEdit();
+	const fullRange = new vscode.Range(
+		document.positionAt(0),
+		document.positionAt(content.length)
+	);
+	
+	// This is a simplified replacement - in real app we would use a proper AST parser
+	const classRegex = new RegExp(`class\\s+${model.name}[\\s\\S]*?{([\\s\\S]*?)}`);
+	const match = content.match(classRegex);
+	if (match) {
+		const oldClassBody = match[1];
+		// Replace only the final fields part
+		const updatedClassBody = oldClassBody.replace(/final\s+[\w\?<>]+\s+\w+;/g, '').trim() + '\n' + propertiesString;
+		newContent = content.replace(oldClassBody, updatedClassBody);
+	}
+
+	edit.replace(model.path, fullRange, newContent);
+	await vscode.workspace.applyEdit(edit);
+	await document.save();
 }
 
 export function deactivate() {}

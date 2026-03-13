@@ -306,10 +306,16 @@ class ModelBuilder {
       if (lowerValue == 'int' || lowerValue == 'integer') return 'int?';
       if (lowerValue == 'double' || lowerValue == 'number' || lowerValue == 'float') return 'double?';
       if (lowerValue == 'bool' || lowerValue == 'boolean') return 'bool?';
-      if (lowerValue == 'string') return 'String?';
       if (lowerValue == 'datetime') return 'DateTime?';
       if (lowerValue == 'file' || lowerValue == 'multipartfile') return 'MultipartFile?';
-
+      // Only check for date/time in name if value is generic 'string'
+      if (lowerValue == 'string') {
+        if (name.toLowerCase().contains('date') || name.toLowerCase().contains('time')) {
+          return 'DateTime?';
+        }
+        return 'String?';
+      }
+      // For actual string values (not type hints), check name
       if (name.toLowerCase().contains('date') || name.toLowerCase().contains('time')) {
         return 'DateTime?';
       }

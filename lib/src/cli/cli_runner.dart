@@ -8,6 +8,7 @@ import '../generators/api_generator.dart';
 import '../generators/auth_generator.dart';
 import '../generators/data/datasource_impl_generator.dart';
 import '../generators/data/mock_datasource_generator.dart';
+
 import '../generators/data/models/models_generator.dart';
 import '../generators/data/repository_impl_generator.dart';
 import '../generators/presentation/cubit_generator.dart';
@@ -217,17 +218,17 @@ class CliRunner {
         architectureStyle: config.architectureStyle,
       ).generate(categories);
 
-      // Data - Mock Datasources
-      _verbose('Generating mock datasources...');
-      await MockDatasourceGenerator(
+      // Data - Repository Implementations
+      _verbose('Generating repositories...');
+      await RepositoryImplGenerator(
         outputDir: config.outputDir,
         packageName: packageName,
         architectureStyle: config.architectureStyle,
       ).generate(categories);
 
-      // Data - Repository Implementations
-      _verbose('Generating repositories...');
-      await RepositoryImplGenerator(
+      // Data - Mock Datasources (in test/ folder)
+      _verbose('Generating mock datasources...');
+      await MockDatasourceGenerator(
         outputDir: config.outputDir,
         packageName: packageName,
         architectureStyle: config.architectureStyle,

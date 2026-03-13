@@ -48,7 +48,7 @@ class AuthGenerator {
               ..name = 'token'
               ..type = refer('String');
           }))
-          ..body = refer('AuthInterceptor(token: token)').code;
+          ..body = refer('AuthInterceptor(token)').code;
       }));
 
       // Fields

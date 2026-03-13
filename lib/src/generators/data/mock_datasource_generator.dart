@@ -25,9 +25,9 @@ class MockDatasourceGenerator {
 
   String _getDatasourcePath(String featureName) {
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => '$outputDir/lib/features/$featureName/data/datasources',
-      ArchitectureStyle.layerFirst => '$outputDir/lib/data/datasources',
-      ArchitectureStyle.simple => '$outputDir/lib/datasources',
+      ArchitectureStyle.featureFirst => '$outputDir/test/features/$featureName/data/datasources',
+      ArchitectureStyle.layerFirst => '$outputDir/test/data/datasources',
+      ArchitectureStyle.simple => '$outputDir/test/datasources',
     };
   }
 
@@ -42,22 +42,36 @@ class MockDatasourceGenerator {
     final library = Library((b) {
       b.directives.add(Directive.import('package:dio/dio.dart'));
       
-      // Import the interface
-      final dsFileName = switch (architectureStyle) {
-        ArchitectureStyle.featureFirst => '${featureName}_remote_datasource.dart',
-        _ => '${featureName}_datasource.dart',
+      // Import the interface from lib using package import
+      final dsImport = switch (architectureStyle) {
+        ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/datasources/${featureName}_remote_datasource.dart',
+        ArchitectureStyle.layerFirst => 'package:$packageName/data/datasources/${featureName}_datasource.dart',
+        ArchitectureStyle.simple => 'package:$packageName/datasources/${featureName}_datasource.dart',
       };
-      b.directives.add(Directive.import(dsFileName));
+      b.directives.add(Directive.import(dsImport));
 
-      // Import models for return types
+      // Import models for return types from lib using package import
       for (final endpoint in category.endpoints) {
         if (endpoint.hasResponseBody) {
           final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
           final resFileName = '${filePrefix}${StringUtils.toSnakeCase(endpoint.name)}_res.dart';
           final importPath = switch (architectureStyle) {
-            ArchitectureStyle.featureFirst => '../models/responses/$resFileName',
-            ArchitectureStyle.layerFirst => '../models/$featureName/responses/$resFileName',
-            ArchitectureStyle.simple => '../models/$featureName/responses/$resFileName',
+            ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/models/responses/$resFileName',
+            ArchitectureStyle.layerFirst => 'package:$packageName/data/models/$featureName/responses/$resFileName',
+            ArchitectureStyle.simple => 'package:$packageName/models/$featureName/responses/$resFileName',
+          };
+          b.directives.add(Directive.import(importPath));
+        }
+      }
+
+      // Import request types from usecases (for clean architecture) or models (for simple) from lib
+      for (final endpoint in category.endpoints) {
+        if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
+          final usecaseFileName = '${StringUtils.toSnakeCase(endpoint.name)}_usecase.dart';
+          final importPath = switch (architectureStyle) {
+            ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/domain/usecases/$usecaseFileName',
+            ArchitectureStyle.layerFirst => 'package:$packageName/domain/usecases/$featureName/$usecaseFileName',
+            ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/${featureName}_${StringUtils.toSnakeCase(endpoint.name)}_req.dart',
           };
           b.directives.add(Directive.import(importPath));
         }

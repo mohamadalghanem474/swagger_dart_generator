@@ -60,7 +60,7 @@ class EntityBuilder {
         ..type = MethodType.getter
         ..annotations.add(refer('override'))
         ..body = Block((b) {
-          final fieldList = properties.keys.map((name) => refer(name)).toList();
+          final fieldList = properties.keys.map((name) => refer(StringUtils.toLowerCamelCase(name))).toList();
           b.addExpression(literalList(fieldList).returned);
         });
     });
@@ -69,7 +69,7 @@ class EntityBuilder {
   /// Builds the class fields.
   List<Field> _buildFields() {
     return properties.entries.map((entry) {
-      final fieldName = entry.key;
+      final fieldName = StringUtils.toLowerCamelCase(entry.key);
       final fieldType = _inferType(entry.key, entry.value);
 
       return Field((b) {
@@ -87,7 +87,7 @@ class EntityBuilder {
       b.constant = true;
 
       for (final entry in properties.entries) {
-        final fieldName = entry.key;
+        final fieldName = StringUtils.toLowerCamelCase(entry.key);
 
         b.optionalParameters.add(Parameter((b) {
           b

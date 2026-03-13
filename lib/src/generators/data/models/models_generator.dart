@@ -100,17 +100,28 @@ class ModelsGenerator {
     final properties = <String, dynamic>{};
 
     if (endpoint.requestBody != null) {
-      properties.addAll(_flattenProperties(endpoint.requestBody!));
+      // Convert request body keys to camelCase to match param naming
+      final bodyProperties = _flattenProperties(endpoint.requestBody!);
+      for (final entry in bodyProperties.entries) {
+        final camelKey = StringUtils.toLowerCamelCase(entry.key);
+        properties[camelKey] = entry.value;
+      }
     }
 
     for (final param in endpoint.pathParams) {
       final fieldName = StringUtils.toLowerCamelCase(param.name);
-      properties[fieldName] = _getDefaultValueForType(param.type);
+      // Skip if already exists from request body
+      if (!properties.containsKey(fieldName)) {
+        properties[fieldName] = _getDefaultValueForType(param.type);
+      }
     }
 
     for (final param in endpoint.queryParams) {
       final fieldName = StringUtils.toLowerCamelCase(param.name);
-      properties[fieldName] = _getDefaultValueForType(param.type);
+      // Skip if already exists from request body or path params
+      if (!properties.containsKey(fieldName)) {
+        properties[fieldName] = _getDefaultValueForType(param.type);
+      }
     }
 
     // For simple architecture: Request models need Equatable, toJson, fromJson
@@ -135,12 +146,16 @@ class ModelsGenerator {
 
     for (final param in endpoint.queryParams) {
       final fieldName = StringUtils.toLowerCamelCase(param.name);
-      properties[fieldName] = _getDefaultValueForType(param.type);
+      if (!properties.containsKey(fieldName)) {
+        properties[fieldName] = _getDefaultValueForType(param.type);
+      }
     }
 
     for (final param in endpoint.pathParams) {
       final fieldName = StringUtils.toLowerCamelCase(param.name);
-      properties[fieldName] = _getDefaultValueForType(param.type);
+      if (!properties.containsKey(fieldName)) {
+        properties[fieldName] = _getDefaultValueForType(param.type);
+      }
     }
 
     if (properties.isEmpty) return;
