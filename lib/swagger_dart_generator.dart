@@ -1,39 +1,41 @@
+/// Swagger Dart Generator
+///
+/// A professional Dart code generator that creates complete Data Layer packages
+/// for Flutter projects from Swagger/OpenAPI JSON files.
+///
+/// ## Usage
+///
+/// ```bash
+/// dart pub global activate swagger_dart_generator
+/// swagger_dart_generator --input swagger.json --output ./api_package
+/// ```
+///
+/// ## Features
+///
+/// - Generates Clean Architecture structure
+/// - Type-safe models with Equatable
+/// - Repository and DataSource patterns
+/// - Dio integration for HTTP
+/// - Dartz Either for error handling
+/// - Zero external build dependencies
 library swagger_dart_generator;
 
-export 'src/swagger_parser.dart';
-export 'src/generators/model_generator.dart';
-export 'src/generators/datasource_generator.dart';
-export 'src/generators/repository_generator.dart';
-export 'src/generators/endpoint_generator.dart';
-export 'src/generators/test_generator.dart';
-import 'dart:io';
-import 'package:swagger_dart_generator/src/generators/api_generator.dart';
-import 'package:swagger_dart_generator/src/generators/failure_generator.dart';
-import 'package:swagger_dart_generator/src/swagger_parser.dart';
-import 'package:swagger_dart_generator/src/generators/model_generator.dart';
-import 'package:swagger_dart_generator/src/generators/datasource_generator.dart';
-import 'package:swagger_dart_generator/src/generators/repository_generator.dart';
-import 'package:swagger_dart_generator/src/generators/endpoint_generator.dart';
-import 'package:swagger_dart_generator/src/generators/test_generator.dart';
+// Core exports
+export 'src/cli/argument_parser.dart';
+export 'src/cli/cli_runner.dart';
+export 'src/core/models/endpoint_model.dart';
+export 'src/core/swagger_parser.dart';
 
-Future<void> generateFromSwagger() async {
-  final directory = Directory.current;
-  final swaggerJsonPath = '${directory.path}/swagger.json';
-  final outputDirectory = '${directory.path}';
-  final packageName = directory.path.split(Platform.pathSeparator).last;
-  final tempParsedSwaggerPath = await parseSwaggerFile(swaggerJsonPath, outputDirectory);
-  await generateEndpoints(tempParsedSwaggerPath, packageName, outputDirectory);
-  await generateModels(tempParsedSwaggerPath, packageName, outputDirectory);
-  await generateDatasources(tempParsedSwaggerPath, packageName, outputDirectory);
-  await generateRepositories(tempParsedSwaggerPath, packageName, outputDirectory);
-  await generateApi(tempParsedSwaggerPath, packageName, outputDirectory);
-  await generateFailureClasses(outputDirectory);
-  await generateIntegrationTests(tempParsedSwaggerPath, packageName, outputDirectory);
-  print('⏳ Running mg_tools...');
-  final mgToolsResult = await Process.run('dart', ['run', 'mg_tools', '--replace']);
-  if (mgToolsResult.exitCode == 0) {
-    print('🔥 Ready to use! You can now import and use the generated code.\n');
-  } else {
-    print('⚠️  Some issues occurred during generation. Check the logs above.\n');
-  }
-}
+// Generator exports
+export 'src/generators/api/api_generator.dart';
+export 'src/generators/datasource/datasource_generator.dart';
+export 'src/generators/endpoints/endpoints_generator.dart';
+export 'src/generators/failure/failure_generator.dart';
+export 'src/generators/models/model_generator.dart';
+export 'src/generators/pubspec/pubspec_generator.dart';
+export 'src/generators/repository/repository_generator.dart';
+export 'src/generators/test/test_generator.dart';
+
+// Utils exports
+export 'src/utils/dart_type_utils.dart';
+export 'src/utils/string_utils.dart';
