@@ -2,8 +2,8 @@
 
 import 'dart:io';
 
-import 'package:swagger_dart_generator/src/cli/argument_parser.dart';
-import 'package:swagger_dart_generator/src/cli/cli_runner.dart';
+import '../lib/src/cli/argument_parser.dart';
+import '../lib/src/cli/cli_runner.dart';
 
 /// Entry point for the Swagger Dart Generator CLI.
 ///

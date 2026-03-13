@@ -74,7 +74,7 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run bundle-generator && npm run compile",
+    "vscode:prepublish": "npm run bundle-generator && cd bundle && dart pub get && cd .. && npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "bundle-generator": "rm -rf bundle/* && mkdir -p bundle && cp -r bin lib pubspec.yaml bundle/",

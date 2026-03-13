@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:yaml/yaml.dart';
-import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
+import '../core/models/architecture_style.dart';
 
 /// Configuration options for the generator.
 class GeneratorConfig {

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
-import 'package:swagger_dart_generator/src/utils/string_utils.dart';
+import 'models/endpoint_model.dart';
+import '../utils/string_utils.dart';
 
 /// Parses Swagger/OpenAPI JSON files and extracts endpoint information.
 class SwaggerParser {

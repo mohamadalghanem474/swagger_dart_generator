@@ -14,7 +14,6 @@ ROADMAP.md
 
 # Dart
 .dart_tool/
-bundle/.dart_tool/
 .packages
 .pub/
 build/

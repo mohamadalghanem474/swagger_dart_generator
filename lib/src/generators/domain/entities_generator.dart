@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
-import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
-import 'package:swagger_dart_generator/src/generators/data/models/entity_builder.dart';
-import 'package:swagger_dart_generator/src/utils/string_utils.dart';
+import '../../core/models/architecture_style.dart';
+import '../../core/models/endpoint_model.dart';
+import '../data/models/entity_builder.dart';
+import '../../utils/string_utils.dart';
 
 /// Generates domain entities.
 ///

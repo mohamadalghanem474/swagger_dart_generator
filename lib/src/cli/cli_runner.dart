@@ -1,23 +1,23 @@
 import 'dart:io';
 
-import 'package:swagger_dart_generator/src/cli/argument_parser.dart';
-import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
-import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
-import 'package:swagger_dart_generator/src/core/swagger_parser.dart';
-import 'package:swagger_dart_generator/src/generators/api_generator.dart';
-import 'package:swagger_dart_generator/src/generators/auth_generator.dart';
-import 'package:swagger_dart_generator/src/generators/data/datasource_impl_generator.dart';
-import 'package:swagger_dart_generator/src/generators/data/mock_datasource_generator.dart';
-import 'package:swagger_dart_generator/src/generators/data/models/models_generator.dart';
-import 'package:swagger_dart_generator/src/generators/data/repository_impl_generator.dart';
-import 'package:swagger_dart_generator/src/generators/presentation/cubit_generator.dart';
-import 'package:swagger_dart_generator/src/generators/domain/entities_generator.dart';
-import 'package:swagger_dart_generator/src/generators/domain/repository_interface_generator.dart';
-import 'package:swagger_dart_generator/src/generators/domain/usecases_generator.dart';
-import 'package:swagger_dart_generator/src/generators/endpoints_generator.dart';
-import 'package:swagger_dart_generator/src/generators/failure_generator.dart';
-import 'package:swagger_dart_generator/src/generators/pubspec_generator.dart';
-import 'package:swagger_dart_generator/src/generators/test_generator.dart';
+import 'argument_parser.dart';
+import '../core/models/architecture_style.dart';
+import '../core/models/endpoint_model.dart';
+import '../core/swagger_parser.dart';
+import '../generators/api_generator.dart';
+import '../generators/auth_generator.dart';
+import '../generators/data/datasource_impl_generator.dart';
+import '../generators/data/mock_datasource_generator.dart';
+import '../generators/data/models/models_generator.dart';
+import '../generators/data/repository_impl_generator.dart';
+import '../generators/presentation/cubit_generator.dart';
+import '../generators/domain/entities_generator.dart';
+import '../generators/domain/repository_interface_generator.dart';
+import '../generators/domain/usecases_generator.dart';
+import '../generators/endpoints_generator.dart';
+import '../generators/failure_generator.dart';
+import '../generators/pubspec_generator.dart';
+import '../generators/test_generator.dart';
 
 /// Runs the code generation process.
 class CliRunner {

@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
-import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
-import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
-import 'package:swagger_dart_generator/src/utils/string_utils.dart';
+import '../../core/models/architecture_style.dart';
+import '../../core/models/endpoint_model.dart';
+import '../../utils/string_utils.dart';
 
 /// Generates mock data source implementations for testing.
 class MockDatasourceGenerator {

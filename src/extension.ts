@@ -5,6 +5,9 @@ import * as path from 'path';
 function getGeneratorCommand(context: vscode.ExtensionContext): string {
 	const extensionPath = context.extensionPath;
 	const generatorPath = path.join(extensionPath, 'bundle', 'bin', 'swagger_dart_generator.dart');
+	
+	// Run the script directly. Since we'll set CWD to the bundle folder,
+	// it will automatically find the .dart_tool/package_config.json
 	return `dart "${generatorPath}"`;
 }
 
@@ -44,11 +47,20 @@ export function activate(context: vscode.ExtensionContext) {
 
 		if (!filePath) return;
 
-		const terminal = vscode.window.createTerminal('Swagger Dart Watch');
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filePath)) || vscode.workspace.workspaceFolders?.[0];
+		const workspaceRoot = workspaceFolder ? workspaceFolder.uri.fsPath : path.dirname(filePath);
+		const absoluteInputPath = path.isAbsolute(filePath) ? filePath : path.resolve(workspaceRoot, filePath);
+		const executionCwd = path.join(context.extensionPath, 'bundle');
+
+		const terminal = vscode.window.createTerminal({
+			name: 'Swagger Dart Watch',
+			cwd: executionCwd
+		});
+		
 		const baseCommand = getGeneratorCommand(context);
 		
 		terminal.show();
-		terminal.sendText(`${baseCommand} -i "${filePath}" --watch`);
+		terminal.sendText(`${baseCommand} -i "${absoluteInputPath}" --watch`);
 		vscode.window.showInformationMessage('Watch mode started in terminal.');
 	});
 
@@ -59,28 +71,31 @@ function runGeneration(context: vscode.ExtensionContext, filePath: string, optio
 	// 1. Detect the workspace folder where the file belongs, or use the first workspace folder
 	const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filePath)) || vscode.workspace.workspaceFolders?.[0];
 	
-	// 2. Determine the CWD (Current Working Directory) for the execution
-	// If no workspace is open, use the directory of the swagger.json file
-	const cwd = workspaceFolder ? workspaceFolder.uri.fsPath : path.dirname(filePath);
+	// 2. Determine the workspace root
+	const workspaceRoot = workspaceFolder ? workspaceFolder.uri.fsPath : path.dirname(filePath);
 	
-	// 3. Determine the output directory
-	// If the user didn't provide one, use the workspace root (cwd)
-	const outputDir = options.outputDir || cwd;
+	// 3. Ensure paths are absolute for reliable execution from a different CWD
+	const absoluteInputPath = path.isAbsolute(filePath) ? filePath : path.resolve(workspaceRoot, filePath);
+	const outputDir = options.outputDir || workspaceRoot;
+	const absoluteOutputDir = path.isAbsolute(outputDir) ? outputDir : path.resolve(workspaceRoot, outputDir);
 
 	const baseCommand = getGeneratorCommand(context);
 
-	let command = `${baseCommand} -i "${filePath}"`;
+	let command = `${baseCommand} -i "${absoluteInputPath}"`;
 	if (options.architecture) command += ` -a ${options.architecture}`;
 	if (options.generateBloc) command += ` --bloc`;
-	command += ` -o "${outputDir}"`;
+	command += ` -o "${absoluteOutputDir}"`;
+
+	// 4. The CWD for the process should be the bundle folder so Dart resolves internal packages correctly
+	const executionCwd = path.join(context.extensionPath, 'bundle');
 
 	vscode.window.withProgress({
 		location: vscode.ProgressLocation.Notification,
-		title: `Swagger Dart: Generating Code in ${path.basename(outputDir)}...`,
+		title: `Swagger Dart: Generating Code in ${path.basename(absoluteOutputDir)}...`,
 		cancellable: false
 	}, (progress) => {
 		return new Promise((resolve, reject) => {
-			cp.exec(command, { cwd }, (error, stdout, stderr) => {
+			cp.exec(command, { cwd: executionCwd }, (error, stdout, stderr) => {
 				if (error) {
 					vscode.window.showErrorMessage(`Generation failed: ${stderr || error.message}`);
 					reject(error);

@@ -2,11 +2,11 @@ name: CI/CD
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ '**' ]
     tags:
       - 'v*'
   pull_request:
-    branches: [ main, master ]
+    branches: [ '**' ]
 
 jobs:
   test-dart:
@@ -33,7 +33,7 @@ jobs:
 
   release:
     needs: [test-dart, test-extension]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
