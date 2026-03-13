@@ -34,19 +34,19 @@ export 'src/core/models/endpoint_model.dart';
 export 'src/core/swagger_parser.dart';
 
 // Generator exports
-export 'src/generators/api/api_generator.dart';
+export 'src/generators/api_generator.dart';
 export 'src/generators/data/datasource_impl_generator.dart';
-export 'src/generators/data/models_generator.dart';
+export 'src/generators/data/models/models_generator.dart';
 export 'src/generators/data/repository_impl_generator.dart';
 export 'src/generators/domain/entities_generator.dart';
 export 'src/generators/domain/repository_interface_generator.dart';
 export 'src/generators/domain/usecases_generator.dart';
-export 'src/generators/endpoints/endpoints_generator.dart';
-export 'src/generators/failure/failure_generator.dart';
-export 'src/generators/models/builders/entity_builder.dart';
-export 'src/generators/models/builders/model_builder.dart';
-export 'src/generators/pubspec/pubspec_generator.dart';
-export 'src/generators/test/test_generator.dart';
+export 'src/generators/endpoints_generator.dart';
+export 'src/generators/failure_generator.dart';
+export 'src/generators/data/models/entity_builder.dart';
+export 'src/generators/data/models/model_builder.dart';
+export 'src/generators/pubspec_generator.dart';
+export 'src/generators/test_generator.dart';
 
 // Utils exports
 export 'src/utils/dart_type_utils.dart';

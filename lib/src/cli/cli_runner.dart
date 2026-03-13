@@ -4,17 +4,17 @@ import 'package:swagger_dart_generator/src/cli/argument_parser.dart';
 import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
 import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
 import 'package:swagger_dart_generator/src/core/swagger_parser.dart';
-import 'package:swagger_dart_generator/src/generators/api/api_generator.dart';
+import 'package:swagger_dart_generator/src/generators/api_generator.dart';
 import 'package:swagger_dart_generator/src/generators/data/datasource_impl_generator.dart';
-import 'package:swagger_dart_generator/src/generators/data/models_generator.dart';
+import 'package:swagger_dart_generator/src/generators/data/models/models_generator.dart';
 import 'package:swagger_dart_generator/src/generators/data/repository_impl_generator.dart';
 import 'package:swagger_dart_generator/src/generators/domain/entities_generator.dart';
 import 'package:swagger_dart_generator/src/generators/domain/repository_interface_generator.dart';
 import 'package:swagger_dart_generator/src/generators/domain/usecases_generator.dart';
-import 'package:swagger_dart_generator/src/generators/endpoints/endpoints_generator.dart';
-import 'package:swagger_dart_generator/src/generators/failure/failure_generator.dart';
-import 'package:swagger_dart_generator/src/generators/pubspec/pubspec_generator.dart';
-import 'package:swagger_dart_generator/src/generators/test/test_generator.dart';
+import 'package:swagger_dart_generator/src/generators/endpoints_generator.dart';
+import 'package:swagger_dart_generator/src/generators/failure_generator.dart';
+import 'package:swagger_dart_generator/src/generators/pubspec_generator.dart';
+import 'package:swagger_dart_generator/src/generators/test_generator.dart';
 
 /// Runs the code generation process.
 class CliRunner {

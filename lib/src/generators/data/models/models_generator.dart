@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:swagger_dart_generator/src/core/models/architecture_style.dart';
 import 'package:swagger_dart_generator/src/core/models/endpoint_model.dart';
-import 'package:swagger_dart_generator/src/generators/models/builders/model_builder.dart';
+import 'package:swagger_dart_generator/src/generators/data/models/model_builder.dart';
 import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 
 /// Generates data models with barrel exports.
