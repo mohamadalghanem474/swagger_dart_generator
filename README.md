@@ -12,6 +12,10 @@ You run the generator once and you instantly get a package you can import in any
 dart pub global activate swagger_dart_generator
 ```
 
+## 🗺️ Roadmap
+
+Check our [ROADMAP.md](file:///Users/mo/Desktop/swagger_dart_generator/ROADMAP.md) for the latest updates and future plans for the project.
+
 ## Usage
 
 ### Run the command with the path to your `swagger.json`. The tool will generate a Dart package structure

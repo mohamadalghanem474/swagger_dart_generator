@@ -4,7 +4,7 @@ import 'package:dart_style/dart_style.dart';
 import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 
 /// Builds an Entity class that extends Equatable (base class for models).
-/// 
+///
 /// Features:
 /// - Extends Equatable for value equality
 /// - const constructor with named parameters
@@ -104,8 +104,7 @@ class EntityBuilder {
     if (value == null) return 'dynamic?';
 
     if (value is String) {
-      if (name.toLowerCase().contains('date') ||
-          name.toLowerCase().contains('time')) {
+      if (name.toLowerCase().contains('date') || name.toLowerCase().contains('time')) {
         return 'DateTime?';
       }
       return 'String?';

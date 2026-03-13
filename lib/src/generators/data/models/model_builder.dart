@@ -4,7 +4,7 @@ import 'package:dart_style/dart_style.dart';
 import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 
 /// Builds a Model class that extends an Entity or works standalone.
-/// 
+///
 /// Features:
 /// - Extends Entity class when entityClassName is provided (super.id, super.status, etc.)
 /// - Standalone model with its own fields when entityClassName is null
@@ -67,16 +67,18 @@ class ModelBuilder {
         ..fields.addAll(fields)
         ..constructors.add(constructor)
         ..annotations.add(refer('immutable'));
-      
+
       if (_hasEntity) {
         // Model extends Entity (which already has Equatable props)
         // No need to override props - it's inherited from Entity
-        b..extend = refer(entityClassName!)
-         ..methods.addAll([fromJson, toJson, copyWith]);
+        b
+          ..extend = refer(entityClassName!)
+          ..methods.addAll([fromJson, toJson, copyWith]);
       } else {
         // Standalone model extends Equatable directly
-        b..extend = refer('Equatable')
-         ..methods.addAll([fromJson, toJson, copyWith, propsGetter, stringifyGetter]);
+        b
+          ..extend = refer('Equatable')
+          ..methods.addAll([fromJson, toJson, copyWith, propsGetter, stringifyGetter]);
       }
     });
   }
@@ -88,7 +90,7 @@ class ModelBuilder {
     if (_hasEntity) {
       return []; // All fields are in parent Entity
     }
-    
+
     // Standalone mode: define fields here
     return properties.entries.map((entry) {
       final fieldType = _inferType(entry.key, entry.value);
@@ -144,9 +146,7 @@ class ModelBuilder {
           }
 
           b.addExpression(
-            refer(className)
-                .newInstance([], constructorArgs)
-                .returned,
+            refer(className).newInstance([], constructorArgs).returned,
           );
         });
     });
@@ -245,30 +245,42 @@ class ModelBuilder {
   /// Builds field extraction from JSON.
   Expression _buildFieldFromJson(String fieldName, String fieldType) {
     final baseType = fieldType.replaceAll('?', '');
+    final isNullable = fieldType.endsWith('?');
     final jsonAccess = refer('json').index(literalString(fieldName));
 
-    if (fieldType.endsWith('?')) {
+    if (isNullable) {
       return jsonAccess.equalTo(literalNull).conditional(
-        literalNull,
-        _buildCastExpression(jsonAccess, baseType),
-      );
+            literalNull,
+            _buildCastExpression(jsonAccess, baseType, true),
+          );
     }
 
-    return _buildCastExpression(jsonAccess, baseType);
+    return _buildCastExpression(jsonAccess, baseType, false);
   }
 
   /// Builds a cast expression for a type.
-  Expression _buildCastExpression(Expression expression, String type) {
-    return switch (type) {
-      'String' => expression.asA(refer('String')),
-      'int' => expression.asA(refer('int')),
-      'double' => expression.asA(refer('double')),
-      'bool' => expression.asA(refer('bool')),
-      'DateTime' => refer('DateTime').property('parse').call([expression.asA(refer('String'))]),
-      'List<dynamic>' => expression.asA(refer('List<dynamic>')),
-      'Map<String, dynamic>' => expression.asA(refer('Map<String, dynamic>')),
-      _ => expression,
-    };
+  Expression _buildCastExpression(Expression expression, String type, bool isNullable) {
+    switch (type) {
+      case 'String':
+        return expression.property('toString').call([]);
+      case 'int':
+        final parsed = refer('int').property('tryParse').call([expression.property('toString').call([])]);
+        return isNullable ? parsed : parsed.ifNullThen(literalNum(0));
+      case 'double':
+        final parsed = refer('double').property('tryParse').call([expression.property('toString').call([])]);
+        return isNullable ? parsed : parsed.ifNullThen(literalNum(0.0));
+      case 'bool':
+        return expression.property('toString').call([]).property('toLowerCase').call([]).equalTo(literalString('true'));
+      case 'DateTime':
+        final parsed = refer('DateTime').property('tryParse').call([expression.property('toString').call([])]);
+        return isNullable ? parsed : parsed.ifNullThen(refer('DateTime').property('now').call([]));
+      case 'List<dynamic>':
+        return expression.asA(refer('List<dynamic>'));
+      case 'Map<String, dynamic>':
+        return expression.asA(refer('Map<String, dynamic>'));
+      default:
+        return expression;
+    }
   }
 
   /// Builds field serialization to JSON.
@@ -288,8 +300,7 @@ class ModelBuilder {
     if (value == null) return 'dynamic?';
 
     if (value is String) {
-      if (name.toLowerCase().contains('date') ||
-          name.toLowerCase().contains('time')) {
+      if (name.toLowerCase().contains('date') || name.toLowerCase().contains('time')) {
         return 'DateTime?';
       }
       return 'String?';

@@ -68,36 +68,27 @@ class ApiGenerator {
       _ => '${featureName}_datasource.dart',
     };
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/data/datasources/$fileName',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/data/datasources/$fileName',
-      ArchitectureStyle.simple => 
-        'package:$packageName/datasources/$fileName',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/datasources/$fileName',
+      ArchitectureStyle.layerFirst => 'package:$packageName/data/datasources/$fileName',
+      ArchitectureStyle.simple => 'package:$packageName/datasources/$fileName',
     };
   }
 
   /// Gets the repository implementation import based on architecture style.
   String _getRepositoryImplImport(String featureName) {
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/data/repositories/${featureName}_repository_impl.dart',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/data/repositories/${featureName}_repository_impl.dart',
-      ArchitectureStyle.simple => 
-        'package:$packageName/repositories/${featureName}_repository_impl.dart',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/repositories/${featureName}_repository_impl.dart',
+      ArchitectureStyle.layerFirst => 'package:$packageName/data/repositories/${featureName}_repository_impl.dart',
+      ArchitectureStyle.simple => 'package:$packageName/repositories/${featureName}_repository_impl.dart',
     };
   }
 
   /// Gets the repository interface import based on architecture style.
   String _getRepositoryInterfaceImport(String featureName) {
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.simple => 
-        'package:$packageName/repositories/${featureName}_repository.dart',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/domain/repositories/${featureName}_repository.dart',
+      ArchitectureStyle.layerFirst => 'package:$packageName/domain/repositories/${featureName}_repository.dart',
+      ArchitectureStyle.simple => 'package:$packageName/repositories/${featureName}_repository.dart',
     };
   }
 
@@ -105,35 +96,8 @@ class ApiGenerator {
     return Class((b) {
       b.name = className;
 
-      b.fields.addAll([
-        Field((b) {
-          b
-            ..name = '_dio'
-            ..type = refer('Dio')
-            ..modifier = FieldModifier.final$;
-        }),
-        Field((b) {
-          b
-            ..name = '_failure'
-            ..type = refer('Failure')
-            ..modifier = FieldModifier.final$;
-        }),
-      ]);
-
       b.constructors.add(Constructor((b) {
         b.name = '_internal';
-        b.requiredParameters.addAll([
-          Parameter((b) {
-            b
-              ..name = '_dio'
-              ..toThis = true;
-          }),
-          Parameter((b) {
-            b
-              ..name = '_failure'
-              ..toThis = true;
-          }),
-        ]);
       }));
 
       b.methods.add(Method((b) {
@@ -154,19 +118,21 @@ class ApiGenerator {
               ..defaultTo = refer('const DefaultFailure()').code;
           }))
           ..body = Block((b) {
+            b.addExpression(refer('${className}DI').property('init').call([refer('dio'), refer('failure')]));
             b.addExpression(
-              refer('$className._internal(dio, failure)').returned,
+              refer('$className._internal').call([]).returned,
             );
           });
       }));
 
       for (final category in categories) {
         final camelName = StringUtils.toLowerCamelCase(category.name);
+        final safeCamelName = camelName == 'default' ? 'defaultRepository' : camelName;
         final repoInterface = 'I${category.name}Repository';
 
         b.methods.add(Method((b) {
           b
-            ..name = camelName
+            ..name = safeCamelName
             ..type = MethodType.getter
             ..returns = refer(repoInterface)
             ..lambda = true

@@ -86,6 +86,7 @@ class DatasourceImplGenerator {
     };
 
     final library = Library((b) {
+      b.directives.add(Directive.import('dart:isolate'));
       b.directives.add(Directive.import('package:dio/dio.dart'));
       b.directives.add(Directive.import('package:$packageName/end_points.dart'));
 
@@ -150,7 +151,7 @@ class DatasourceImplGenerator {
   }
 
   Method _buildInterfaceMethod(EndpointModel endpoint) {
-    final returnType = endpoint.hasResponseBody ? 'Future<${endpoint.responseClassName}>' : 'Future<void>';
+    final returnType = endpoint.hasResponseBody ? 'Future<${endpoint.responseClassName}>' : 'Future<dynamic>';
 
     final builder = MethodBuilder()
       ..name = endpoint.methodName
@@ -165,15 +166,15 @@ class DatasourceImplGenerator {
     }
 
     builder.optionalParameters.addAll([
-      _buildOptionalParam('cancelToken', 'CancelToken?'),
-      _buildOptionalParam('options', 'Options?'),
+      _buildOptionalParam('cancelToken', 'Object?'),
+      _buildOptionalParam('extraHeaders', 'Map<String, dynamic>?'),
     ]);
 
     return builder.build();
   }
 
   Method _buildImplementationMethod(EndpointModel endpoint, String categoryName) {
-    final returnType = endpoint.hasResponseBody ? 'Future<${endpoint.responseClassName}>' : 'Future<void>';
+    final returnType = endpoint.hasResponseBody ? 'Future<${endpoint.responseClassName}>' : 'Future<dynamic>';
 
     return Method((b) {
       b
@@ -191,8 +192,8 @@ class DatasourceImplGenerator {
       }
 
       b.optionalParameters.addAll([
-        _buildOptionalParam('cancelToken', 'CancelToken?'),
-        _buildOptionalParam('options', 'Options?'),
+        _buildOptionalParam('cancelToken', 'Object?'),
+        _buildOptionalParam('extraHeaders', 'Map<String, dynamic>?'),
       ]);
 
       b.body = _buildMethodBody(endpoint, categoryName);
@@ -203,8 +204,9 @@ class DatasourceImplGenerator {
     final statements = <Code>[];
 
     final categoryCamel = StringUtils.toLowerCamelCase(categoryName);
+    final safeCategoryName = categoryCamel == 'default' ? 'defaultEndpoints' : categoryCamel;
     statements.add(
-      declareVar('url').assign(refer('EndPoints').property(categoryCamel).property(endpoint.methodName)).statement,
+      declareVar('url').assign(refer('EndPoints').property(safeCategoryName).property(endpoint.methodName)).statement,
     );
 
     for (final param in endpoint.pathParams) {
@@ -214,7 +216,7 @@ class DatasourceImplGenerator {
             .assign(
               refer('url').property('replaceAll').call([
                 literalString('{${param.name}}'),
-                refer('req.$fieldName?.toString() ?? \'\''),
+                refer("req.$fieldName?.toString() ?? (throw ArgumentError('${param.name} cannot be null'))"),
               ]),
             )
             .statement,
@@ -232,18 +234,25 @@ class DatasourceImplGenerator {
       namedArgs['queryParameters'] = refer('req.toJson()');
     }
 
-    namedArgs['cancelToken'] = refer('cancelToken');
-    namedArgs['options'] = refer('options');
+    namedArgs['cancelToken'] = refer('cancelToken').asA(refer('CancelToken?'));
+    namedArgs['options'] = CodeExpression(Code('extraHeaders != null ? Options(headers: extraHeaders) : null'));
 
     if (endpoint.hasResponseBody) {
       statements.add(
         declareFinal('result').assign(methodCall.call(args, namedArgs).awaited).statement,
       );
       statements.add(
-        refer('${endpoint.responseClassName}.fromJson').call([refer('result.data')]).returned.statement,
+        declareFinal('responseData').assign(refer('result.data').asA(refer('Map<String, dynamic>'))).statement,
       );
-    } else {
-      statements.add(methodCall.call(args, namedArgs).awaited.statement);
+      statements.add(
+        refer('Isolate.run')
+            .call([
+              Method((b) => b..body = refer('${endpoint.responseClassName}.fromJson').call([refer('responseData')]).returned.statement).closure
+            ])
+            .awaited
+            .returned
+            .statement,
+      );
     }
 
     return Block((b) => b.statements.addAll(statements));

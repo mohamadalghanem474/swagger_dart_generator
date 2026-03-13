@@ -95,7 +95,7 @@ class EndpointModel extends Equatable {
         break;
       }
     }
-    
+
     // Convert to PascalCase
     return clean.split('_').map((part) {
       if (part.isEmpty) return '';

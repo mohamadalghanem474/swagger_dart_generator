@@ -75,7 +75,6 @@ class TestGenerator {
 
       b.body.add(Code('void main() {'));
       b.body.add(Code('  final dio = Dio(BaseOptions(baseUrl: \'https://api.$packageName.com\'));'));
-      b.body.add(Code('  ${StringUtils.toPascalCase(packageName)}DI.init(dio, const DefaultFailure());'));
       b.body.add(Code('  final api = ${StringUtils.toPascalCase(packageName)}.init(dio);'));
       b.body.add(Code(''));
       b.body.add(Code('  group(\'${category.name} Tests\', () {'));
@@ -99,6 +98,7 @@ class TestGenerator {
   Code _buildTestCase(EndpointModel endpoint) {
     final methodName = endpoint.methodName;
     final camelCategory = StringUtils.toLowerCamelCase(endpoint.category);
+    final safeCamelCategory = camelCategory == 'default' ? 'defaultRepository' : camelCategory;
     final buffer = StringBuffer();
 
     buffer.writeln();
@@ -106,9 +106,9 @@ class TestGenerator {
 
     if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
       buffer.writeln('      final req = ${endpoint.requestClassName}();');
-      buffer.writeln('      final result = await api.$camelCategory.$methodName(req);');
+      buffer.writeln('      final result = await api.$safeCamelCategory.$methodName(req);');
     } else {
-      buffer.writeln('      final result = await api.$camelCategory.$methodName();');
+      buffer.writeln('      final result = await api.$safeCamelCategory.$methodName();');
     }
 
     buffer.writeln('      expect(result.isRight(), isTrue);');

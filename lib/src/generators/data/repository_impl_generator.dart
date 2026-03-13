@@ -108,7 +108,6 @@ class RepositoryImplGenerator {
     final library = Library((b) {
       b.directives.add(Directive.import('package:$packageName/failure.dart'));
       b.directives.add(Directive.import('package:dartz/dartz.dart'));
-      b.directives.add(Directive.import('package:dio/dio.dart'));
 
       // For non-simple architecture, import the interface
       if (!isSimple) {
@@ -167,7 +166,7 @@ class RepositoryImplGenerator {
   /// Builds an interface method definition.
   Method _buildInterfaceMethod(EndpointModel endpoint) {
     final returnClassName = _getReturnTypeClassName(endpoint);
-    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, $returnClassName>>' : 'Future<Either<FailureDetails, void>>';
+    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, $returnClassName>>' : 'Future<Either<FailureDetails, dynamic>>';
 
     final builder = MethodBuilder()
       ..name = endpoint.methodName
@@ -182,8 +181,8 @@ class RepositoryImplGenerator {
     }
 
     builder.optionalParameters.addAll([
-      _buildOptionalParam('cancelToken', 'CancelToken?'),
-      _buildOptionalParam('options', 'Options?'),
+      _buildOptionalParam('cancelToken', 'Object?'),
+      _buildOptionalParam('extraHeaders', 'Map<String, dynamic>?'),
     ]);
 
     return builder.build();
@@ -239,7 +238,7 @@ class RepositoryImplGenerator {
 
   Method _buildImplementationMethod(EndpointModel endpoint) {
     final returnClassName = _getReturnTypeClassName(endpoint);
-    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, $returnClassName>>' : 'Future<Either<FailureDetails, void>>';
+    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, $returnClassName>>' : 'Future<Either<FailureDetails, dynamic>>';
 
     return Method((b) {
       b
@@ -257,8 +256,8 @@ class RepositoryImplGenerator {
       }
 
       b.optionalParameters.addAll([
-        _buildOptionalParam('cancelToken', 'CancelToken?'),
-        _buildOptionalParam('options', 'Options?'),
+        _buildOptionalParam('cancelToken', 'Object?'),
+        _buildOptionalParam('extraHeaders', 'Map<String, dynamic>?'),
       ]);
 
       b.body = _buildInlineTryCatchBody(endpoint);
@@ -271,7 +270,7 @@ class RepositoryImplGenerator {
     final hasReq = endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty;
     final methodCall = '_dataSource.${endpoint.methodName}';
     final params = hasReq ? 'req' : '';
-    final namedParams = 'cancelToken: cancelToken, options: options';
+    final namedParams = 'cancelToken: cancelToken, extraHeaders: extraHeaders';
     final fullCall = params.isNotEmpty ? '$methodCall($params, $namedParams)' : '$methodCall($namedParams)';
 
     statements.add(Code('try {'));
@@ -281,8 +280,8 @@ class RepositoryImplGenerator {
       // For simple architecture, result is the Response model
       statements.add(Code('  return Right(result);'));
     } else {
-      statements.add(Code('  await $fullCall;'));
-      statements.add(Code('  return const Right(null);'));
+      statements.add(Code('  final result = await $fullCall;'));
+      statements.add(Code('  return Right(result);'));
     }
     statements.add(Code('} catch (e, stackTrace) {'));
     statements.add(Code('  return Left(_failure.handle(e, stackTrace));'));

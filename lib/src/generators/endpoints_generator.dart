@@ -22,11 +22,12 @@ class EndpointsGenerator {
 
         for (final category in categories) {
           final fieldName = StringUtils.toLowerCamelCase(category.name);
+          final safeFieldName = fieldName == 'default' ? 'defaultEndpoints' : fieldName;
           final className = '_${category.name}';
 
           b.fields.add(Field((b) {
             b
-              ..name = fieldName
+              ..name = safeFieldName
               ..static = true
               ..modifier = FieldModifier.constant
               ..assignment = refer(className).constInstance([]).code;

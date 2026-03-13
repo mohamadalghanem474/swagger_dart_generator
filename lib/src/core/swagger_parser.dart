@@ -27,9 +27,7 @@ class SwaggerParser {
 
     final paths = _toStringKeyMap(swagger['paths']) ?? {};
     final components = _toStringKeyMap(swagger['components']) ?? {};
-    final rawSchemas = _toStringKeyMap(components['schemas']) ??
-        _toStringKeyMap(swagger['definitions']) ??
-        {};
+    final rawSchemas = _toStringKeyMap(components['schemas']) ?? _toStringKeyMap(swagger['definitions']) ?? {};
     final schemas = <String, dynamic>{}..addAll(rawSchemas);
 
     final endpointsByCategory = <String, List<EndpointModel>>{};
@@ -59,8 +57,7 @@ class SwaggerParser {
           pathParams: parameters.path,
           requestBody: parameters.body,
           responseBody: response,
-          description: detailsMap['description'] as String? ??
-              detailsMap['summary'] as String?,
+          description: detailsMap['description'] as String? ?? detailsMap['summary'] as String?,
         );
 
         endpointsByCategory.putIfAbsent(category, () => []);
@@ -68,9 +65,7 @@ class SwaggerParser {
       });
     });
 
-    return endpointsByCategory.entries
-        .map((e) => EndpointCategory(name: e.key, endpoints: e.value))
-        .toList();
+    return endpointsByCategory.entries.map((e) => EndpointCategory(name: e.key, endpoints: e.value)).toList();
   }
 
   /// Converts a map to Map<String, dynamic>.
@@ -85,15 +80,7 @@ class SwaggerParser {
 
   /// Checks if a string is a valid HTTP method.
   bool _isHttpMethod(String method) {
-    const httpMethods = {
-      'get',
-      'post',
-      'put',
-      'delete',
-      'patch',
-      'head',
-      'options'
-    };
+    const httpMethods = {'get', 'post', 'put', 'delete', 'patch', 'head', 'options'};
     return httpMethods.contains(method.toLowerCase());
   }
 
@@ -110,8 +97,7 @@ class SwaggerParser {
   String _generateEndpointName(String path, String category, String method) {
     final segments = path.split('/').where((s) => s.isNotEmpty).toList();
     final cleanSegments = segments.where((s) => !s.contains('{')).toList();
-    final base =
-        cleanSegments.isEmpty ? category.toLowerCase() : cleanSegments.last;
+    final base = cleanSegments.isEmpty ? category.toLowerCase() : cleanSegments.last;
     return '${base}_${method.toLowerCase()}';
   }
 
@@ -145,8 +131,7 @@ class SwaggerParser {
         continue;
       }
 
-      final schema = _toStringKeyMap(paramMap['schema']) ??
-          {'type': paramMap['type'] ?? 'string'};
+      final schema = _toStringKeyMap(paramMap['schema']) ?? {'type': paramMap['type'] ?? 'string'};
       final type = _schemaToDartType(schema);
       final required = paramMap['required'] == true;
 
@@ -270,8 +255,7 @@ class SwaggerParser {
   }
 
   /// Resolves a reference to its schema.
-  Map<String, dynamic>? _resolveRef(
-      String ref, Map<String, dynamic> allSchemas) {
+  Map<String, dynamic>? _resolveRef(String ref, Map<String, dynamic> allSchemas) {
     final refName = _getRefName(ref);
 
     // Direct match

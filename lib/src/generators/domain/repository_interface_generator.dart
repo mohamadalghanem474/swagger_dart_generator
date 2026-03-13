@@ -81,7 +81,6 @@ class RepositoryInterfaceGenerator {
     final library = Library((b) {
       // Imports
       b.directives.add(Directive.import('package:dartz/dartz.dart'));
-      b.directives.add(Directive.import('package:dio/dio.dart'));
       b.directives.add(Directive.import('package:$packageName/failure.dart'));
 
       // Individual entity imports
@@ -124,7 +123,7 @@ class RepositoryInterfaceGenerator {
 
   /// Builds an interface method definition.
   Method _buildInterfaceMethod(EndpointModel endpoint) {
-    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, ${endpoint.entityClassName}>>' : 'Future<Either<FailureDetails, void>>';
+    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, ${endpoint.entityClassName}>>' : 'Future<Either<FailureDetails, dynamic>>';
 
     final builder = MethodBuilder()
       ..name = endpoint.methodName
@@ -141,8 +140,8 @@ class RepositoryInterfaceGenerator {
 
     // Optional parameters
     builder.optionalParameters.addAll([
-      _buildOptionalParam('cancelToken', 'CancelToken?'),
-      _buildOptionalParam('options', 'Options?'),
+      _buildOptionalParam('cancelToken', 'Object?'),
+      _buildOptionalParam('extraHeaders', 'Map<String, dynamic>?'),
     ]);
 
     return builder.build();

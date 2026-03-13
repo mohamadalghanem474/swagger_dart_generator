@@ -92,7 +92,6 @@ class UsecasesGenerator {
     final library = Library((b) {
       // Imports
       b.directives.add(Directive.import('package:dartz/dartz.dart'));
-      b.directives.add(Directive.import('package:dio/dio.dart'));
       b.directives.add(Directive.import('package:equatable/equatable.dart'));
       b.directives.add(Directive.import('package:meta/meta.dart'));
       b.directives.add(Directive.import('package:$packageName/failure.dart'));
@@ -291,7 +290,7 @@ class UsecasesGenerator {
       }));
 
       // Call method
-      final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, ${endpoint.entityClassName}>>' : 'Future<Either<FailureDetails, void>>';
+      final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, ${endpoint.entityClassName}>>' : 'Future<Either<FailureDetails, dynamic>>';
 
       b.methods.add(Method((b) {
         b
@@ -310,8 +309,8 @@ class UsecasesGenerator {
 
         // Optional parameters
         b.optionalParameters.addAll([
-          _buildOptionalParam('cancelToken', 'CancelToken?'),
-          _buildOptionalParam('options', 'Options?'),
+          _buildOptionalParam('cancelToken', 'Object?'),
+          _buildOptionalParam('extraHeaders', 'Map<String, dynamic>?'),
         ]);
 
         // Body
@@ -322,7 +321,7 @@ class UsecasesGenerator {
 
         final namedArgs = <String, Expression>{
           'cancelToken': refer('cancelToken'),
-          'options': refer('options'),
+          'extraHeaders': refer('extraHeaders'),
         };
 
         b.body = refer('_repository').property(endpoint.methodName).call(args, namedArgs).awaited.returned.statement;

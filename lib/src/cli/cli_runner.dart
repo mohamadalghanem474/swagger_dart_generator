@@ -94,7 +94,7 @@ class CliRunner {
 
       // DOMAIN LAYER
       _verbose('Generating domain layer...');
-      
+
       // Domain - Entities
       await EntitiesGenerator(
         outputDir: config.outputDir,
@@ -192,9 +192,13 @@ class CliRunner {
 
   /// Gets the package name from the output directory.
   String _getPackageName() {
-    final dir = Directory(config.outputDir);
-    final name = dir.path.split(Platform.pathSeparator).last;
-    return name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]'), '_');
+    final dir = Directory(config.outputDir).absolute;
+    var name = dir.path.split(Platform.pathSeparator).where((s) => s.isNotEmpty).last;
+    name = name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]'), '_');
+    if (name.isEmpty || name == '_') {
+      name = 'api_client';
+    }
+    return name;
   }
 
   /// Previews what would be generated.
