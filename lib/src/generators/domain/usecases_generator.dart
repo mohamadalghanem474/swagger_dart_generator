@@ -12,7 +12,6 @@ import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 /// Output structure varies by architecture style:
 /// - Feature-First: lib/features/{feature}/domain/usecases/
 /// - Layer-First: lib/features/{feature}/usecases/
-/// - Clean-Mixed: lib/features/{feature}/usecases/
 class UsecasesGenerator {
   final String outputDir;
   final String packageName;
@@ -46,8 +45,7 @@ class UsecasesGenerator {
   String _getUsecasesPath(String featureName) {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => '$outputDir/lib/features/$featureName/domain/usecases',
-      ArchitectureStyle.layerFirst => '$outputDir/lib/features/$featureName/usecases',
-      ArchitectureStyle.cleanMixed => '$outputDir/lib/features/$featureName/usecases',
+      ArchitectureStyle.layerFirst => '$outputDir/lib/domain/usecases/$featureName',
       ArchitectureStyle.simple => '$outputDir/lib/usecases',
     };
   }
@@ -55,28 +53,19 @@ class UsecasesGenerator {
   /// Gets the repository import path based on architecture style.
   String _getRepositoryImport(String featureName) {
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.simple => 
-        'package:$packageName/repositories/${featureName}_repository.dart',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/domain/repositories/${featureName}_repository.dart',
+      ArchitectureStyle.layerFirst => 'package:$packageName/domain/repositories/${featureName}_repository.dart',
+      ArchitectureStyle.simple => 'package:$packageName/repositories/${featureName}_repository.dart',
     };
   }
 
-  /// Gets the entities import path based on architecture style.
-  String _getEntitiesImport(String featureName) {
+  /// Gets the entity import path for a specific endpoint.
+  String _getEntityImport(String featureName, String endpointName) {
+    final entityFileName = '${StringUtils.toSnakeCase(endpointName)}_entity.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/domain/entities/${featureName}_entities.dart',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/domain/entities/${featureName}_entities.dart',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/domain/entities/${featureName}_entities.dart',
-      ArchitectureStyle.simple => 
-        'package:$packageName/models/${featureName}_models.dart',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/domain/entities/$entityFileName',
+      ArchitectureStyle.layerFirst => 'package:$packageName/domain/entities/$featureName/$entityFileName',
+      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/$entityFileName',
     };
   }
 
@@ -85,14 +74,9 @@ class UsecasesGenerator {
     final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
     final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_req.dart';
     return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/data/models/requests/$fileName',
-      ArchitectureStyle.layerFirst => 
-        'package:$packageName/data/models/$featureName/requests/$fileName',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/features/$featureName/data/models/requests/$fileName',
-      ArchitectureStyle.simple => 
-        'package:$packageName/models/requests/$fileName',
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/models/requests/$fileName',
+      ArchitectureStyle.layerFirst => 'package:$packageName/data/models/$featureName/requests/$fileName',
+      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/$fileName',
     };
   }
 
@@ -113,12 +97,16 @@ class UsecasesGenerator {
       b.directives.add(Directive.import('package:dio/dio.dart'));
       b.directives.add(Directive.import('package:$packageName/failure.dart'));
       b.directives.add(Directive.import(_getRepositoryImport(featureName)));
-      b.directives.add(Directive.import(_getEntitiesImport(featureName)));
+
+      // Entity import if has response
+      if (endpoint.hasResponseBody) {
+        b.directives.add(Directive.import(
+          _getEntityImport(featureName, endpoint.name),
+        ));
+      }
 
       // Request import if needed
-      if (endpoint.hasRequestBody ||
-          endpoint.queryParams.isNotEmpty ||
-          endpoint.pathParams.isNotEmpty) {
+      if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
         b.directives.add(Directive.import(
           _getRequestImport(featureName, endpoint.name),
         ));
@@ -145,9 +133,7 @@ class UsecasesGenerator {
         }));
 
         // Call method
-        final returnType = endpoint.hasResponseBody
-            ? 'Future<Either<FailureDetails, ${endpoint.responseClassName}>>'
-            : 'Future<Either<FailureDetails, void>>';
+        final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, ${endpoint.entityClassName}>>' : 'Future<Either<FailureDetails, void>>';
 
         b.methods.add(Method((b) {
           b
@@ -156,9 +142,7 @@ class UsecasesGenerator {
             ..modifier = MethodModifier.async;
 
           // Request parameter
-          if (endpoint.hasRequestBody ||
-              endpoint.queryParams.isNotEmpty ||
-              endpoint.pathParams.isNotEmpty) {
+          if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
             b.requiredParameters.add(Parameter((b) {
               b
                 ..name = 'req'
@@ -174,9 +158,7 @@ class UsecasesGenerator {
 
           // Body
           final args = <Expression>[];
-          if (endpoint.hasRequestBody ||
-              endpoint.queryParams.isNotEmpty ||
-              endpoint.pathParams.isNotEmpty) {
+          if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
             args.add(refer('req'));
           }
 
@@ -185,12 +167,7 @@ class UsecasesGenerator {
             'options': refer('options'),
           };
 
-          b.body = refer('_repository')
-              .property(endpoint.methodName)
-              .call(args, namedArgs)
-              .awaited
-              .returned
-              .statement;
+          b.body = refer('_repository').property(endpoint.methodName).call(args, namedArgs).awaited.returned.statement;
         }));
       }));
     });

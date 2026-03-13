@@ -38,8 +38,6 @@ class TestGenerator {
         'package:$packageName/features/$featureName/domain/repositories/${featureName}_repository.dart',
       ArchitectureStyle.layerFirst => 
         'package:$packageName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/domain/repositories/${featureName}_repository.dart',
       ArchitectureStyle.simple => 
         'package:$packageName/repositories/${featureName}_repository.dart',
     };
@@ -54,10 +52,8 @@ class TestGenerator {
         'package:$packageName/features/$featureName/data/models/requests/$fileName',
       ArchitectureStyle.layerFirst => 
         'package:$packageName/data/models/$featureName/requests/$fileName',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/features/$featureName/data/models/requests/$fileName',
       ArchitectureStyle.simple => 
-        'package:$packageName/models/requests/$fileName',
+        'package:$packageName/models/$featureName/requests/$fileName',
     };
   }
 

@@ -244,16 +244,6 @@ class CliRunner {
         _info('   │   └── repositories/ (impl)');
         _info('   └── features/{feature}/');
         _info('       └── usecases/');
-      case ArchitectureStyle.cleanMixed:
-        _info('📁 Structure: lib/');
-        _info('   ├── domain/           # Shared');
-        _info('   │   ├── entities/');
-        _info('   │   └── repositories/ (interfaces)');
-        _info('   └── features/{feature}/');
-        _info('       └── data/');
-        _info('           ├── models/');
-        _info('           ├── datasources/');
-        _info('           └── repositories/ (impl)');
       case ArchitectureStyle.simple:
         _info('📁 Structure: lib/');
         _info('   ├── models/');

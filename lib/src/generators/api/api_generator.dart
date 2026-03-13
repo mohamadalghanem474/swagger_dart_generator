@@ -33,12 +33,19 @@ class ApiGenerator {
         b.directives.add(Directive.import(
           _getDatasourceImport(featureName),
         ));
-        b.directives.add(Directive.import(
-          _getRepositoryImplImport(featureName),
-        ));
-        b.directives.add(Directive.import(
-          _getRepositoryInterfaceImport(featureName),
-        ));
+        // For simple architecture, interface and impl are in same file
+        if (architectureStyle == ArchitectureStyle.simple) {
+          b.directives.add(Directive.import(
+            _getRepositoryInterfaceImport(featureName),
+          ));
+        } else {
+          b.directives.add(Directive.import(
+            _getRepositoryImplImport(featureName),
+          ));
+          b.directives.add(Directive.import(
+            _getRepositoryInterfaceImport(featureName),
+          ));
+        }
       }
 
       b.body.add(Code('final GetIt _getIt = GetIt.instance;'));
@@ -65,8 +72,6 @@ class ApiGenerator {
         'package:$packageName/features/$featureName/data/datasources/$fileName',
       ArchitectureStyle.layerFirst => 
         'package:$packageName/data/datasources/$fileName',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/features/$featureName/data/datasources/$fileName',
       ArchitectureStyle.simple => 
         'package:$packageName/datasources/$fileName',
     };
@@ -79,8 +84,6 @@ class ApiGenerator {
         'package:$packageName/features/$featureName/data/repositories/${featureName}_repository_impl.dart',
       ArchitectureStyle.layerFirst => 
         'package:$packageName/data/repositories/${featureName}_repository_impl.dart',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/features/$featureName/data/repositories/${featureName}_repository_impl.dart',
       ArchitectureStyle.simple => 
         'package:$packageName/repositories/${featureName}_repository_impl.dart',
     };
@@ -92,8 +95,6 @@ class ApiGenerator {
       ArchitectureStyle.featureFirst => 
         'package:$packageName/features/$featureName/domain/repositories/${featureName}_repository.dart',
       ArchitectureStyle.layerFirst => 
-        'package:$packageName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.cleanMixed => 
         'package:$packageName/domain/repositories/${featureName}_repository.dart',
       ArchitectureStyle.simple => 
         'package:$packageName/repositories/${featureName}_repository.dart',

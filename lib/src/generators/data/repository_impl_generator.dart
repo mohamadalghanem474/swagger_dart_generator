@@ -12,7 +12,7 @@ import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 /// Output structure varies by architecture style:
 /// - Feature-First: lib/features/{feature}/data/repositories/
 /// - Layer-First: lib/data/repositories/
-/// - Clean-Mixed: lib/features/{feature}/data/repositories/
+/// - Simple: lib/repositories/ (interface + impl in same file)
 class RepositoryImplGenerator {
   final String outputDir;
   final String packageName;
@@ -35,7 +35,6 @@ class RepositoryImplGenerator {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => '$outputDir/lib/features/$featureName/data/repositories',
       ArchitectureStyle.layerFirst => '$outputDir/lib/data/repositories',
-      ArchitectureStyle.cleanMixed => '$outputDir/lib/features/$featureName/data/repositories',
       ArchitectureStyle.simple => '$outputDir/lib/repositories',
     };
   }
@@ -45,7 +44,6 @@ class RepositoryImplGenerator {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/datasources/${featureName}_remote_datasource.dart',
       ArchitectureStyle.layerFirst => 'package:$packageName/data/datasources/${featureName}_datasource.dart',
-      ArchitectureStyle.cleanMixed => 'package:$packageName/features/$featureName/data/datasources/${featureName}_datasource.dart',
       ArchitectureStyle.simple => 'package:$packageName/datasources/${featureName}_datasource.dart',
     };
   }
@@ -55,8 +53,29 @@ class RepositoryImplGenerator {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/domain/repositories/${featureName}_repository.dart',
       ArchitectureStyle.layerFirst => 'package:$packageName/domain/repositories/${featureName}_repository.dart',
-      ArchitectureStyle.cleanMixed => 'package:$packageName/domain/repositories/${featureName}_repository.dart',
       ArchitectureStyle.simple => 'package:$packageName/repositories/${featureName}_repository.dart',
+    };
+  }
+
+  /// Gets the entity import path based on architecture style.
+  /// For simple architecture, returns response model import path (no entities layer).
+  String _getEntityImport(String featureName, String endpointName) {
+    final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
+    final entityFileName = '${StringUtils.toSnakeCase(endpointName)}_entity.dart';
+    final responseFileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_res.dart';
+    return switch (architectureStyle) {
+      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/domain/entities/$entityFileName',
+      ArchitectureStyle.layerFirst => 'package:$packageName/domain/entities/$featureName/$entityFileName',
+      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/responses/$responseFileName',
+    };
+  }
+
+  /// Gets the return type class name (entity for clean arch, response model for simple).
+  String _getReturnTypeClassName(EndpointModel endpoint) {
+    return switch (architectureStyle) {
+      ArchitectureStyle.featureFirst => endpoint.entityClassName,
+      ArchitectureStyle.layerFirst => endpoint.entityClassName,
+      ArchitectureStyle.simple => endpoint.responseClassName,
     };
   }
 
@@ -67,20 +86,7 @@ class RepositoryImplGenerator {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/models/requests/$fileName',
       ArchitectureStyle.layerFirst => 'package:$packageName/data/models/$featureName/requests/$fileName',
-      ArchitectureStyle.cleanMixed => 'package:$packageName/features/$featureName/data/models/requests/$fileName',
       ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/$fileName',
-    };
-  }
-
-  /// Gets the response model import path based on architecture style.
-  String _getResponseImport(String featureName, String endpointName) {
-    final filePrefix = architectureStyle == ArchitectureStyle.simple ? '${featureName}_' : '';
-    final fileName = '${filePrefix}${StringUtils.toSnakeCase(endpointName)}_res.dart';
-    return switch (architectureStyle) {
-      ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/models/responses/$fileName',
-      ArchitectureStyle.layerFirst => 'package:$packageName/data/models/$featureName/responses/$fileName',
-      ArchitectureStyle.cleanMixed => 'package:$packageName/features/$featureName/data/models/responses/$fileName',
-      ArchitectureStyle.simple => 'package:$packageName/models/$featureName/responses/$fileName',
     };
   }
 
@@ -89,7 +95,8 @@ class RepositoryImplGenerator {
     final repoDir = Directory(_getRepoImplPath(featureName));
     repoDir.createSync(recursive: true);
 
-    final fileName = '${featureName}_repository_impl';
+    final isSimple = architectureStyle == ArchitectureStyle.simple;
+    final fileName = isSimple ? '${featureName}_repository' : '${featureName}_repository_impl';
     final interfaceName = 'I${category.name}Repository';
     final implName = '${category.name}RepositoryImpl';
     final datasourceInterface = 'I${category.name}DataSource';
@@ -98,62 +105,38 @@ class RepositoryImplGenerator {
       b.directives.add(Directive.import('package:$packageName/failure.dart'));
       b.directives.add(Directive.import('package:dartz/dartz.dart'));
       b.directives.add(Directive.import('package:dio/dio.dart'));
-      b.directives.add(Directive.import(_getRepositoryInterfaceImport(featureName)));
+      
+      // For non-simple architecture, import the interface
+      if (!isSimple) {
+        b.directives.add(Directive.import(_getRepositoryInterfaceImport(featureName)));
+      }
+      
       b.directives.add(Directive.import(_getDatasourceImport(featureName)));
 
-      // Individual model imports
+      // Individual entity imports
+      for (final endpoint in category.endpoints) {
+        if (endpoint.hasResponseBody) {
+          b.directives.add(Directive.import(
+            _getEntityImport(featureName, endpoint.name),
+          ));
+        }
+      }
+
+      // Individual request imports
       for (final endpoint in category.endpoints) {
         if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
           b.directives.add(Directive.import(
             _getRequestImport(featureName, endpoint.name),
           ));
         }
-        if (endpoint.hasResponseBody) {
-          b.directives.add(Directive.import(
-            _getResponseImport(featureName, endpoint.name),
-          ));
-        }
       }
 
-      b.body.add(Class((b) {
-        b
-          ..name = implName
-          ..implements.add(refer(interfaceName));
+      // For simple architecture, generate interface in same file
+      if (isSimple) {
+        b.body.add(_buildInterfaceClass(category, interfaceName));
+      }
 
-        b.constructors.add(Constructor((b) {
-          b.requiredParameters.addAll([
-            Parameter((b) {
-              b
-                ..name = '_dataSource'
-                ..toThis = true;
-            }),
-            Parameter((b) {
-              b
-                ..name = '_failure'
-                ..toThis = true;
-            }),
-          ]);
-        }));
-
-        b.fields.addAll([
-          Field((b) {
-            b
-              ..name = '_dataSource'
-              ..type = refer(datasourceInterface)
-              ..modifier = FieldModifier.final$;
-          }),
-          Field((b) {
-            b
-              ..name = '_failure'
-              ..type = refer('Failure')
-              ..modifier = FieldModifier.final$;
-          }),
-        ]);
-
-        for (final endpoint in category.endpoints) {
-          b.methods.add(_buildImplementationMethod(endpoint));
-        }
-      }));
+      b.body.add(_buildImplementationClass(category, implName, interfaceName, datasourceInterface));
     });
 
     final emitter = DartEmitter();
@@ -164,8 +147,99 @@ class RepositoryImplGenerator {
     await file.writeAsString(formatter.format(code));
   }
 
+  /// Builds the interface class for simple architecture.
+  Class _buildInterfaceClass(EndpointCategory category, String interfaceName) {
+    return Class((b) {
+      b
+        ..abstract = true
+        ..name = interfaceName;
+
+      for (final endpoint in category.endpoints) {
+        b.methods.add(_buildInterfaceMethod(endpoint));
+      }
+    });
+  }
+
+  /// Builds an interface method definition.
+  Method _buildInterfaceMethod(EndpointModel endpoint) {
+    final returnClassName = _getReturnTypeClassName(endpoint);
+    final returnType = endpoint.hasResponseBody
+        ? 'Future<Either<FailureDetails, $returnClassName>>'
+        : 'Future<Either<FailureDetails, void>>';
+
+    final builder = MethodBuilder()
+      ..name = endpoint.methodName
+      ..returns = refer(returnType);
+
+    if (endpoint.hasRequestBody || endpoint.queryParams.isNotEmpty || endpoint.pathParams.isNotEmpty) {
+      builder.requiredParameters.add(Parameter((b) {
+        b
+          ..name = 'req'
+          ..type = refer(endpoint.requestClassName);
+      }));
+    }
+
+    builder.optionalParameters.addAll([
+      _buildOptionalParam('cancelToken', 'CancelToken?'),
+      _buildOptionalParam('options', 'Options?'),
+    ]);
+
+    return builder.build();
+  }
+
+  /// Builds the implementation class.
+  Class _buildImplementationClass(
+    EndpointCategory category,
+    String implName,
+    String interfaceName,
+    String datasourceInterface,
+  ) {
+    return Class((b) {
+      b
+        ..name = implName
+        ..implements.add(refer(interfaceName));
+
+      b.constructors.add(Constructor((b) {
+        b.requiredParameters.addAll([
+          Parameter((b) {
+            b
+              ..name = '_dataSource'
+              ..toThis = true;
+          }),
+          Parameter((b) {
+            b
+              ..name = '_failure'
+              ..toThis = true;
+          }),
+        ]);
+      }));
+
+      b.fields.addAll([
+        Field((b) {
+          b
+            ..name = '_dataSource'
+            ..type = refer(datasourceInterface)
+            ..modifier = FieldModifier.final$;
+        }),
+        Field((b) {
+          b
+            ..name = '_failure'
+            ..type = refer('Failure')
+            ..modifier = FieldModifier.final$;
+        }),
+      ]);
+
+      for (final endpoint in category.endpoints) {
+        b.methods.add(_buildImplementationMethod(endpoint));
+      }
+    });
+  }
+
   Method _buildImplementationMethod(EndpointModel endpoint) {
-    final returnType = endpoint.hasResponseBody ? 'Future<Either<FailureDetails, ${endpoint.responseClassName}>>' : 'Future<Either<FailureDetails, void>>';
+    final returnClassName = _getReturnTypeClassName(endpoint);
+    final returnType = endpoint.hasResponseBody
+        ? 'Future<Either<FailureDetails, $returnClassName>>'
+        : 'Future<Either<FailureDetails, void>>';
 
     return Method((b) {
       b
@@ -198,12 +272,21 @@ class RepositoryImplGenerator {
     final methodCall = '_dataSource.${endpoint.methodName}';
     final params = hasReq ? 'req' : '';
     final namedParams = 'cancelToken: cancelToken, options: options';
-    final fullCall = params.isNotEmpty ? '$methodCall($params, $namedParams)' : '$methodCall($namedParams)';
+    final fullCall = params.isNotEmpty
+        ? '$methodCall($params, $namedParams)'
+        : '$methodCall($namedParams)';
 
     statements.add(Code('try {'));
     if (endpoint.hasResponseBody) {
       statements.add(Code('  final result = await $fullCall;'));
-      statements.add(Code('  return Right(result);'));
+      // For clean architecture: map response model to domain entity
+      // For simple architecture: return response model directly
+      if (architectureStyle == ArchitectureStyle.simple) {
+        statements.add(Code('  return Right(result);'));
+      } else {
+        statements.add(Code('  final entity = ${endpoint.entityClassName}.fromJson(result.toJson());'));
+        statements.add(Code('  return Right(entity);'));
+      }
     } else {
       statements.add(Code('  await $fullCall;'));
       statements.add(Code('  return const Right(null);'));

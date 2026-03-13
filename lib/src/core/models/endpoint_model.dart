@@ -77,6 +77,13 @@ class EndpointModel extends Equatable {
     return '${cleanName}${methodName}Response';
   }
 
+  /// Gets the entity class name (e.g., `LoginPostEntity`).
+  String get entityClassName {
+    final cleanName = _cleanEndpointName(name);
+    final methodName = method.value[0].toUpperCase() + method.value.substring(1);
+    return '${cleanName}${methodName}Entity';
+  }
+
   /// Removes method suffix (_post, _get, etc.) and converts to PascalCase.
   String _cleanEndpointName(String endpointName) {
     // Remove method suffix (_post, _get, _put, _delete, etc.)

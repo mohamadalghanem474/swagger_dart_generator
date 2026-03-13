@@ -12,7 +12,6 @@ import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 /// Output structure varies by architecture style:
 /// - Feature-First: lib/features/{feature}/data/datasources/
 /// - Layer-First: lib/data/datasources/
-/// - Clean-Mixed: lib/features/{feature}/data/datasources/
 class DatasourceImplGenerator {
   final String outputDir;
   final String packageName;
@@ -35,7 +34,6 @@ class DatasourceImplGenerator {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => '$outputDir/lib/features/$featureName/data/datasources',
       ArchitectureStyle.layerFirst => '$outputDir/lib/data/datasources',
-      ArchitectureStyle.cleanMixed => '$outputDir/lib/features/$featureName/data/datasources',
       ArchitectureStyle.simple => '$outputDir/lib/datasources',
     };
   }
@@ -45,7 +43,6 @@ class DatasourceImplGenerator {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => '${featureName}_remote_datasource',
       ArchitectureStyle.layerFirst => '${featureName}_datasource',
-      ArchitectureStyle.cleanMixed => '${featureName}_datasource',
       ArchitectureStyle.simple => '${featureName}_datasource',
     };
   }
@@ -57,7 +54,6 @@ class DatasourceImplGenerator {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/models/requests/$fileName',
       ArchitectureStyle.layerFirst => 'package:$packageName/data/models/$featureName/requests/$fileName',
-      ArchitectureStyle.cleanMixed => 'package:$packageName/features/$featureName/data/models/requests/$fileName',
       ArchitectureStyle.simple => 'package:$packageName/models/$featureName/requests/$fileName',
     };
   }
@@ -69,7 +65,6 @@ class DatasourceImplGenerator {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => 'package:$packageName/features/$featureName/data/models/responses/$fileName',
       ArchitectureStyle.layerFirst => 'package:$packageName/data/models/$featureName/responses/$fileName',
-      ArchitectureStyle.cleanMixed => 'package:$packageName/features/$featureName/data/models/responses/$fileName',
       ArchitectureStyle.simple => 'package:$packageName/models/$featureName/responses/$fileName',
     };
   }

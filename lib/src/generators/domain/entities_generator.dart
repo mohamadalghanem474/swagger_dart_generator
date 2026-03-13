@@ -9,9 +9,8 @@ import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 ///
 /// Output structure varies by architecture style:
 /// - Feature-First: lib/features/{feature}/domain/entities/
-/// - Layer-First: lib/domain/entities/
-/// - Clean-Mixed: lib/domain/entities/
-/// - Simple: lib/models/ (no separate entities layer)
+/// - Layer-First: lib/domain/entities/{feature}/
+/// - Simple: No entities (return early or skip)
 class EntitiesGenerator {
   final String outputDir;
   final String packageName;
@@ -25,30 +24,30 @@ class EntitiesGenerator {
 
   /// Generates entities for all features.
   Future<void> generate(List<EndpointCategory> categories) async {
-    // For simple architecture, entities are combined with models
-    if (architectureStyle == ArchitectureStyle.simple) {
-      return;
-    }
-
     for (final category in categories) {
       await _generateFeatureEntities(category);
     }
   }
 
   /// Gets the entities directory path based on architecture style.
-  String _getEntitiesPath(String featureName) {
+  /// Returns null for simple architecture (no entities layer).
+  String? _getEntitiesPath(String featureName) {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => '$outputDir/lib/features/$featureName/domain/entities',
-      ArchitectureStyle.layerFirst => '$outputDir/lib/domain/entities',
-      ArchitectureStyle.cleanMixed => '$outputDir/lib/domain/entities',
-      ArchitectureStyle.simple => '$outputDir/lib/models',
+      ArchitectureStyle.layerFirst => '$outputDir/lib/domain/entities/$featureName',
+      ArchitectureStyle.simple => null,
     };
   }
 
   /// Generates entities for a single feature.
   Future<void> _generateFeatureEntities(EndpointCategory category) async {
     final featureName = StringUtils.toSnakeCase(category.name);
-    final entitiesDir = Directory(_getEntitiesPath(featureName));
+    final entitiesPath = _getEntitiesPath(featureName);
+    
+    // Skip for simple architecture (no entities layer)
+    if (entitiesPath == null) return;
+    
+    final entitiesDir = Directory(entitiesPath);
     entitiesDir.createSync(recursive: true);
 
     // Generate individual entity files for each response
@@ -64,7 +63,7 @@ class EntitiesGenerator {
     EndpointModel endpoint,
     Directory outputDir,
   ) async {
-    final className = endpoint.responseClassName;
+    final className = _getEntityClassName(endpoint);
     final fileName = '${StringUtils.toSnakeCase(endpoint.name)}_entity.dart';
 
     // Extract properties from response body
@@ -81,6 +80,9 @@ class EntitiesGenerator {
     final file = File('${outputDir.path}/$fileName');
     await file.writeAsString(builder.build());
   }
+
+  /// Gets the entity class name.
+  String _getEntityClassName(EndpointModel endpoint) => endpoint.entityClassName;
 
   /// Extracts properties from response body schema.
   Map<String, dynamic> _extractProperties(Map<String, dynamic> data) {

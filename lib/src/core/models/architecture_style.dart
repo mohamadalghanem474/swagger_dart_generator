@@ -8,7 +8,7 @@ enum ArchitectureStyle {
   /// ```
   /// lib/features/{feature}/
   ///   ├── domain/
-  ///   │   ├── entities/
+  ///   │   ├── entities/       ← Real entities (not exports)
   ///   │   ├── repositories/
   ///   │   └── usecases/
   ///   └── data/
@@ -25,7 +25,7 @@ enum ArchitectureStyle {
   /// Structure:
   /// ```
   /// lib/
-  ///   ├── domain/
+  ///   ├── domain/             ← Real entities (not exports)
   ///   │   ├── entities/
   ///   │   └── repositories/
   ///   ├── data/
@@ -38,30 +38,13 @@ enum ArchitectureStyle {
   /// Best for: Large enterprise apps, strict layer separation
   layerFirst,
 
-  /// Clean Mixed - Shared Domain + Feature Data
+  /// Simple Architecture (no layers, no entities)
   /// 
   /// Structure:
   /// ```
   /// lib/
-  ///   ├── domain/           # Shared across all features
-  ///   │   ├── entities/
-  ///   │   └── repositories/
-  ///   └── features/{feature}/
-  ///       └── data/
-  ///           ├── models/
-  ///           └── datasources/
-  /// ```
-  /// 
-  /// Best for: Apps with shared domain logic
-  cleanMixed,
-
-  /// Simple Architecture (no layers)
-  /// 
-  /// Structure:
-  /// ```
-  /// lib/
-  ///   ├── models/
-  ///   ├── repositories/
+  ///   ├── models/             ← DTOs only (no entities layer)
+  ///   ├── repositories/       ← Interface + Impl in same file
   ///   └── datasources/
   /// ```
   /// 
@@ -76,7 +59,6 @@ extension ArchitectureStyleExtension on ArchitectureStyle {
     return switch (this) {
       ArchitectureStyle.featureFirst => 'Feature-First Clean Arch',
       ArchitectureStyle.layerFirst => 'Layer-First Clean Arch',
-      ArchitectureStyle.cleanMixed => 'Clean Mixed',
       ArchitectureStyle.simple => 'Simple (No Layers)',
     };
   }
@@ -86,7 +68,6 @@ extension ArchitectureStyleExtension on ArchitectureStyle {
     return switch (this) {
       ArchitectureStyle.featureFirst => 'feature-first',
       ArchitectureStyle.layerFirst => 'layer-first',
-      ArchitectureStyle.cleanMixed => 'clean-mixed',
       ArchitectureStyle.simple => 'simple',
     };
   }
@@ -95,13 +76,11 @@ extension ArchitectureStyleExtension on ArchitectureStyle {
   String get description {
     return switch (this) {
       ArchitectureStyle.featureFirst => 
-        'Each feature has its own domain and data layers. Best for scalability.',
+        'Each feature has its own domain layer with real entities. Best for scalability.',
       ArchitectureStyle.layerFirst => 
-        'Domain and data layers are global, features only have usecases. Best for strict separation.',
-      ArchitectureStyle.cleanMixed => 
-        'Domain is shared globally, each feature has its own data layer. Best balance.',
+        'Domain layer is global with real entities, features only have usecases. Best for strict separation.',
       ArchitectureStyle.simple => 
-        'No layers, just models/repositories/datasources. Best for small apps.',
+        'No layers, just models/repositories/datasources. No entities layer. Best for small apps.',
     };
   }
 
@@ -109,7 +88,7 @@ extension ArchitectureStyleExtension on ArchitectureStyle {
   bool get generatesUsecases => 
       this != ArchitectureStyle.simple;
 
-  /// Whether this style has separate domain layer
+  /// Whether this style has separate domain layer with real entities
   bool get hasDomainLayer => 
       this != ArchitectureStyle.simple;
 

@@ -12,7 +12,7 @@ import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 /// Output structure varies by architecture style:
 /// - Feature-First: lib/features/{feature}/domain/repositories/
 /// - Layer-First: lib/domain/repositories/
-/// - Clean-Mixed: lib/domain/repositories/
+/// - Simple: skipped (interface + impl in same file)
 class RepositoryInterfaceGenerator {
   final String outputDir;
   final String packageName;
@@ -26,7 +26,11 @@ class RepositoryInterfaceGenerator {
 
   /// Generates repository interfaces for all features.
   Future<void> generate(List<EndpointCategory> categories) async {
-    // For global domain architectures, we might want to group by category or put all in one
+    // For simple architecture, interface is combined with implementation
+    if (architectureStyle == ArchitectureStyle.simple) {
+      return;
+    }
+
     for (final category in categories) {
       await _generateRepositoryInterface(category);
     }
@@ -37,22 +41,20 @@ class RepositoryInterfaceGenerator {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => '$outputDir/lib/features/$featureName/domain/repositories',
       ArchitectureStyle.layerFirst => '$outputDir/lib/domain/repositories',
-      ArchitectureStyle.cleanMixed => '$outputDir/lib/domain/repositories',
       ArchitectureStyle.simple => '$outputDir/lib/repositories',
     };
   }
 
-  /// Gets the entities import path based on architecture style.
-  String _getEntitiesImport(String featureName) {
+  /// Gets the entity import path for a specific endpoint.
+  String _getEntityImport(String featureName, String endpointName) {
+    final entityFileName = '${StringUtils.toSnakeCase(endpointName)}_entity.dart';
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => 
-        'package:$packageName/features/$featureName/domain/entities/${featureName}_entities.dart',
+        'package:$packageName/features/$featureName/domain/entities/$entityFileName',
       ArchitectureStyle.layerFirst => 
-        'package:$packageName/domain/entities/${featureName}_entities.dart',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/domain/entities/${featureName}_entities.dart',
+        'package:$packageName/domain/entities/$featureName/$entityFileName',
       ArchitectureStyle.simple => 
-        'package:$packageName/models/${featureName}_models.dart',
+        'package:$packageName/models/$featureName/$entityFileName',
     };
   }
 
@@ -65,10 +67,8 @@ class RepositoryInterfaceGenerator {
         'package:$packageName/features/$featureName/data/models/requests/$fileName',
       ArchitectureStyle.layerFirst => 
         'package:$packageName/data/models/$featureName/requests/$fileName',
-      ArchitectureStyle.cleanMixed => 
-        'package:$packageName/features/$featureName/data/models/requests/$fileName',
       ArchitectureStyle.simple => 
-        'package:$packageName/models/requests/$fileName',
+        'package:$packageName/models/$featureName/requests/$fileName',
     };
   }
 
@@ -85,7 +85,15 @@ class RepositoryInterfaceGenerator {
       b.directives.add(Directive.import('package:dartz/dartz.dart'));
       b.directives.add(Directive.import('package:dio/dio.dart'));
       b.directives.add(Directive.import('package:$packageName/failure.dart'));
-      b.directives.add(Directive.import(_getEntitiesImport(featureName)));
+
+      // Individual entity imports
+      for (final endpoint in category.endpoints) {
+        if (endpoint.hasResponseBody) {
+          b.directives.add(Directive.import(
+            _getEntityImport(featureName, endpoint.name),
+          ));
+        }
+      }
 
       // Request model imports (for method parameters)
       for (final endpoint in category.endpoints) {
@@ -114,17 +122,14 @@ class RepositoryInterfaceGenerator {
     final code = library.accept(emitter).toString();
     final formatter = DartFormatter();
 
-    final fileName = architectureStyle == ArchitectureStyle.simple 
-        ? '${featureName}_repository.dart'
-        : '${featureName}_repository.dart';
-    final file = File('${repoDir.path}/$fileName');
+    final file = File('${repoDir.path}/${featureName}_repository.dart');
     await file.writeAsString(formatter.format(code));
   }
 
   /// Builds an interface method definition.
   Method _buildInterfaceMethod(EndpointModel endpoint) {
     final returnType = endpoint.hasResponseBody
-        ? 'Future<Either<FailureDetails, ${endpoint.responseClassName}>>'
+        ? 'Future<Either<FailureDetails, ${endpoint.entityClassName}>>'
         : 'Future<Either<FailureDetails, void>>';
 
     final builder = MethodBuilder()

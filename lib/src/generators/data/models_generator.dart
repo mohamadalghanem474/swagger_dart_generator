@@ -10,7 +10,6 @@ import 'package:swagger_dart_generator/src/utils/string_utils.dart';
 /// Output structure varies by architecture style:
 /// - Feature-First: lib/features/{feature}/data/models/{requests, responses}/
 /// - Layer-First: lib/data/models/{feature}/{requests, responses}/
-/// - Clean-Mixed: lib/features/{feature}/data/models/{requests, responses}/
 /// - Simple: lib/models/{requests, responses}/
 class ModelsGenerator {
   final String outputDir;
@@ -35,7 +34,6 @@ class ModelsGenerator {
     return switch (architectureStyle) {
       ArchitectureStyle.featureFirst => '$outputDir/lib/features/$featureName/data/models',
       ArchitectureStyle.layerFirst => '$outputDir/lib/data/models/$featureName',
-      ArchitectureStyle.cleanMixed => '$outputDir/lib/features/$featureName/data/models',
       ArchitectureStyle.simple => '$outputDir/lib/models/$featureName',
     };
   }
